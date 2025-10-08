@@ -1,0 +1,176 @@
+@startuml Bounded_Contexts_DDD
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/user.puml
+!include ICONURL/font-awesome-5/server.puml
+
+skinparam rectangle {
+    BackgroundColor<<bounded_context>> LightBlue
+    BackgroundColor<<shared_kernel>> LightGreen
+    BackgroundColor<<customer_supplier>> LightYellow
+    BackgroundColor<<conformist>> LightCoral
+    BackgroundColor<<ant corruption>> LightPink
+    BackgroundColor<<open_host>> LightCyan
+    BackgroundColor<<published_language>> LightGray
+}
+
+title Bounded Contexts - Domain-Driven Design для экосистемы "Будущее 2.0"
+
+' Основные Bounded Contexts
+rectangle "==Медицинский домен\n\nBounded Context:\nPatient Care\n\nОтветственность:\n- Управление пациентами\n- Запись на приёмы\n- Лечебный процесс\n- Электронные медкарты" as medical_context <<bounded_context>>
+
+rectangle "==Финтех домен\n\nBounded Context:\nFinancial Services\n\nОтветственность:\n- Банковские счета\n- Платежи и транзакции\n- Кредитные продукты\n- KYC и AML" as fintech_context <<bounded_context>>
+
+rectangle "==AI-сервисы домен\n\nBounded Context:\nIntelligent Diagnostics\n\nОтветственность:\n- Диагностическая помощь\n- Анализ медицинских снимков\n- Рекомендации по лечению\n- Прогнозирование рисков" as ai_context <<bounded_context>>
+
+rectangle "==Фармацевтический домен\n\nBounded Context:\nPharmaceutical Management\n\nОтветственность:\n- Каталог лекарств\n- Управление запасами\n- Обработка рецептов\n- Прогнозирование спроса" as pharma_context <<bounded_context>>
+
+rectangle "==Оборудование домен\n\nBounded Context:\nMedical Equipment\n\nОтветственность:\n- Реестр оборудования\n- Плановое обслуживание\n- Мониторинг состояния\n- Предиктивное обслуживание" as equipment_context <<bounded_context>>
+
+rectangle "==Платформа данных\n\nBounded Context:\nData Platform\n\nОтветственность:\n- Событийная шина\n- Data Lakehouse\n- Продукты данных\n- Каталог метаданных" as data_context <<bounded_context>>
+
+rectangle "==Портал самообслуживания\n\nBounded Context:\nSelf-Service Analytics\n\nОтветственность:\n- BI отчёты\n- Дашборды\n- Ad-hoc запросы\n- Обнаружение данных" as portal_context <<bounded_context>>
+
+' Shared Kernel
+rectangle "==Общие модели\n\nShared Kernel:\nCommon Models\n\nОбщие сущности:\n- Пользователь (User)\n- Организация (Organization)\n- Аудит (Audit)\n- Безопасность (Security)" as shared_kernel <<shared_kernel>>
+
+' Внешние системы
+rectangle "==Внешние лаборатории\n\nExternal System:\nLaboratory Results" as external_labs <<external>>
+rectangle "==Платёжные системы\n\nExternal System:\nPayment Gateways" as payment_systems <<external>>
+rectangle "==Регуляторы\n\nExternal System:\nRegulatory Bodies" as regulatory <<external>>
+rectangle "==Поставщики оборудования\n\nExternal System:\nEquipment Vendors" as equipment_vendors <<external>>
+
+' Взаимодействия между контекстами
+medical_context -right-> fintech_context : Customer/Supplier\n(События о счетах\nи платежах)
+medical_context -right-> ai_context : Customer/Supplier\n(Медицинские данные\nдля AI анализа)
+medical_context -right-> pharma_context : Customer/Supplier\n(Рецепты и назначения)
+medical_context -right-> equipment_context : Customer/Supplier\n(Запросы на оборудование)
+
+fintech_context -right-> medical_context : Customer/Supplier\n(События о платежах\nза услуги)
+fintech_context -right-> data_context : Customer/Supplier\n(Финансовые события)
+
+ai_context -right-> medical_context : Customer/Supplier\n(AI рекомендации\nи диагнозы)
+ai_context -right-> data_context : Customer/Supplier\n(ML метрики\nи результаты)
+
+pharma_context -right-> medical_context : Customer/Supplier\n(События о продажах\nлекарств)
+pharma_context -right-> data_context : Customer/Supplier\n(Фармацевтические\nсобытия)
+
+equipment_context -right-> medical_context : Customer/Supplier\n(События о доступности\nоборудования)
+equipment_context -right-> data_context : Customer/Supplier\n(Телеметрия\nи метрики)
+
+data_context -right-> portal_context : Customer/Supplier\n(Продукты данных\nдля аналитики)
+
+' Shared Kernel связи
+shared_kernel -down-> medical_context : Shared Models
+shared_kernel -down-> fintech_context : Shared Models
+shared_kernel -down-> ai_context : Shared Models
+shared_kernel -down-> pharma_context : Shared Models
+shared_kernel -down-> equipment_context : Shared Models
+shared_kernel -down-> data_context : Shared Models
+shared_kernel -down-> portal_context : Shared Models
+
+' Внешние интеграции
+medical_context -right-> external_labs : Anti-Corruption Layer\n(Получение результатов\nанализов)
+fintech_context -right-> payment_systems : Anti-Corruption Layer\n(Проведение платежей)
+fintech_context -right-> regulatory : Anti-Corruption Layer\n(Отчётность в ЦБ)
+equipment_context -right-> equipment_vendors : Anti-Corruption Layer\n(Интеграция с\nпроизводителями)
+
+note right of medical_context
+  Ключевые агрегаты:
+  - Patient (Пациент)
+  - Appointment (Приём)
+  - Treatment (Лечение)
+  - MedicalRecord (Медкарта)
+  
+  Доменные события:
+  - PatientRegistered
+  - AppointmentScheduled
+  - TreatmentStarted
+  - MedicalRecordUpdated
+end note
+
+note right of fintech_context
+  Ключевые агрегаты:
+  - Account (Счёт)
+  - Transaction (Транзакция)
+  - Credit (Кредит)
+  - Card (Карта)
+  
+  Доменные события:
+  - AccountCreated
+  - PaymentProcessed
+  - CreditApproved
+  - TransactionCompleted
+end note
+
+note right of ai_context
+  Ключевые агрегаты:
+  - Model (ML модель)
+  - Prediction (Предсказание)
+  - Diagnosis (Диагноз)
+  - Recommendation (Рекомендация)
+  
+  Доменные события:
+  - ModelTrained
+  - PredictionGenerated
+  - DiagnosisCompleted
+  - RecommendationProvided
+end note
+
+note right of pharma_context
+  Ключевые агрегаты:
+  - Drug (Лекарство)
+  - Inventory (Запас)
+  - Prescription (Рецепт)
+  - Sale (Продажа)
+  
+  Доменные события:
+  - DrugAdded
+  - InventoryUpdated
+  - PrescriptionFilled
+  - SaleCompleted
+end note
+
+note right of equipment_context
+  Ключевые агрегаты:
+  - Equipment (Оборудование)
+  - Maintenance (Обслуживание)
+  - Telemetry (Телеметрия)
+  - Incident (Инцидент)
+  
+  Доменные события:
+  - EquipmentRegistered
+  - MaintenanceScheduled
+  - AnomalyDetected
+  - EquipmentFailure
+end note
+
+note right of data_context
+  Ключевые агрегаты:
+  - DataProduct (Продукт данных)
+  - Event (Событие)
+  - Schema (Схема)
+  - Pipeline (Пайплайн)
+  
+  Доменные события:
+  - DataProductCreated
+  - EventPublished
+  - SchemaUpdated
+  - PipelineCompleted
+end note
+
+note right of portal_context
+  Ключевые агрегаты:
+  - Dashboard (Дашборд)
+  - Report (Отчёт)
+  - Query (Запрос)
+  - User (Пользователь)
+  
+  Доменные события:
+  - DashboardCreated
+  - ReportGenerated
+  - QueryExecuted
+  - UserAuthenticated
+end note
+
+@enduml

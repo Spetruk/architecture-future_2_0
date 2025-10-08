@@ -1,0 +1,186 @@
+@startuml Architecture_Comparison
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/user.puml
+!include ICONURL/font-awesome-5/server.puml
+
+skinparam rectangle {
+    BackgroundColor<<current>> LightCoral
+    BackgroundColor<<target>> LightGreen
+    BackgroundColor<<camel>> LightYellow
+    BackgroundColor<<kafka>> LightBlue
+    BackgroundColor<<dwh>> LightGray
+    BackgroundColor<<lakehouse>> LightCyan
+    BackgroundColor<<metric>> LightPink
+}
+
+title Сравнение архитектур: Текущая vs Целевая событийная
+
+' Текущая архитектура
+package "Текущая архитектура (Legacy)" as current_arch <<current>> {
+    
+    rectangle "==Медицинские сервисы\n\nJava/Spring Boot\n\nПроблемы:\n- Жёсткая связанность\n- Синхронные вызовы\n- Монолитная структура" as medical_current <<current>>
+    
+    rectangle "==Финтех сервисы\n\nJava/Spring Boot\n\nПроблемы:\n- Зависимость от Camel\n- Медленные интеграции\n- Сложность изменений" as fintech_current <<current>>
+    
+    rectangle "==Фармацевтические сервисы\n\nJava/Spring Boot\n\nПроблемы:\n- Централизованная логика\n- Batch обработка\n- Legacy интеграции" as pharma_current <<current>>
+    
+    rectangle "==Apache Camel\n\nIntegration Bus\n\nПроблемы:\n- Single Point of Failure\n- Сложность маршрутов\n- Вертикальное масштабирование\n- Узкие места" as camel_bus <<camel>>
+    
+    rectangle "==Legacy DWH\n\nSQL Server 2008\n\nПроблемы:\n- Устаревшая технология\n- Batch обновления\n- Ограниченная масштабируемость\n- Высокие лицензионные расходы" as legacy_dwh <<dwh>>
+    
+    ' Связи текущей архитектуры
+    medical_current -down-> camel_bus : Синхронные вызовы\n500-2000ms
+    fintech_current -down-> camel_bus : Синхронные вызовы\n500-2000ms
+    pharma_current -down-> camel_bus : Синхронные вызовы\n500-2000ms
+    
+    camel_bus -down-> legacy_dwh : Batch обновления\n1-24 часа
+}
+
+' Целевая архитектура
+package "Целевая событийная архитектура" as target_arch <<target>> {
+    
+    rectangle "==Медицинский домен\n\nBounded Context\n\nПреимущества:\n- Независимость\n- Собственная БД\n- Быстрая разработка" as medical_target <<target>>
+    
+    rectangle "==Финтех домен\n\nBounded Context\n\nПреимущества:\n- Event-driven\n- Горизонтальное масштабирование\n- Real-time обработка" as fintech_target <<target>>
+    
+    rectangle "==AI-сервисы домен\n\nBounded Context\n\nПреимущества:\n- ML модели\n- Streaming аналитика\n- Автоматическое масштабирование" as ai_target <<target>>
+    
+    rectangle "==Фармацевтический домен\n\nBounded Context\n\nПреимущества:\n- Прогнозирование спроса\n- Real-time запасы\n- Интеграция с поставщиками" as pharma_target <<target>>
+    
+    rectangle "==Оборудование домен\n\nBounded Context\n\nПреимущества:\n- IoT телеметрия\n- Предиктивное обслуживание\n- Мониторинг в реальном времени" as equipment_target <<target>>
+    
+    rectangle "==Apache Kafka\n\nEvent Bus\n\nПреимущества:\n- Распределённая архитектура\n- Горизонтальное масштабирование\n- Высокая пропускная способность\n- Отказоустойчивость" as kafka_bus <<kafka>>
+    
+    rectangle "==Data Lakehouse\n\nData Mesh\n\nПреимущества:\n- Real-time аналитика\n- Open Source\n- Elastic scaling\n- Современные технологии" as lakehouse <<lakehouse>>
+    
+    ' Связи целевой архитектуры
+    medical_target -down-> kafka_bus : Асинхронные события\n10-100ms
+    fintech_target -down-> kafka_bus : Асинхронные события\n10-100ms
+    ai_target -down-> kafka_bus : Асинхронные события\n10-100ms
+    pharma_target -down-> kafka_bus : Асинхронные события\n10-100ms
+    equipment_target -down-> kafka_bus : Асинхронные события\n10-100ms
+    
+    kafka_bus -down-> lakehouse : Streaming данные\n< 1 секунды
+}
+
+' Метрики сравнения
+rectangle "==Метрики производительности\n\nТекущая архитектура:\n- Throughput: 100 TPS\n- Latency: 500-2000ms\n- Availability: 95-98%\n- Scaling: Только вертикальное\n- Cost: $500,000/год\n\nЦелевая архитектура:\n- Throughput: 10,000+ TPS\n- Latency: 10-100ms\n- Availability: 99.9%\n- Scaling: Горизонтальное\n- Cost: $200,000/год" as metrics <<metric>>
+
+' Связи с метриками
+current_arch -right-> metrics : Текущие показатели
+target_arch -right-> metrics : Целевые показатели
+
+note right of camel_bus
+  Проблемы Apache Camel:
+  
+  Архитектурные ограничения:
+  - Централизованная обработка
+  - Синхронные вызовы
+  - Сложность маршрутов
+  - Single Point of Failure
+  
+  Операционные проблемы:
+  - Вертикальное масштабирование
+  - Высокие требования к ресурсам
+  - Сложность отладки
+  - Длительное время развёртывания
+  
+  Бизнес-ограничения:
+  - Медленная разработка новых интеграций
+  - Высокие операционные расходы
+  - Ограниченная гибкость
+  - Сложность изменений
+end note
+
+note right of kafka_bus
+  Преимущества Apache Kafka:
+  
+  Архитектурные преимущества:
+  - Распределённая архитектура
+  - Асинхронная обработка
+  - Простота интеграции
+  - Отказоустойчивость
+  
+  Операционные преимущества:
+  - Горизонтальное масштабирование
+  - Эффективное использование ресурсов
+  - Простая отладка
+  - Быстрое развёртывание
+  
+  Бизнес-преимущества:
+  - Быстрая разработка новых интеграций
+  - Низкие операционные расходы
+  - Высокая гибкость
+  - Простота изменений
+end note
+
+note right of legacy_dwh
+  Проблемы Legacy DWH:
+  
+  Технологические ограничения:
+  - SQL Server 2008 (устарел)
+  - Ограниченная масштабируемость
+  - Batch обработка
+  - Высокие лицензионные расходы
+  
+  Функциональные ограничения:
+  - Нет real-time аналитики
+  - Сложные запросы
+  - Ограниченная гибкость
+  - Сложность интеграции
+  
+  Операционные проблемы:
+  - Высокие требования к ресурсам
+  - Сложность администрирования
+  - Ограниченная поддержка
+  - Дорогое масштабирование
+end note
+
+note right of lakehouse
+  Преимущества Data Lakehouse:
+  
+  Технологические преимущества:
+  - Open Source (Apache Iceberg, Dremio)
+  - Elastic scaling
+  - Real-time обработка
+  - Современные технологии
+  
+  Функциональные преимущества:
+  - Real-time аналитика
+  - Быстрые запросы
+  - Высокая гибкость
+  - Простая интеграция
+  
+  Операционные преимущества:
+  - Эффективное использование ресурсов
+  - Простое администрирование
+  - Активная поддержка сообщества
+  - Экономичное масштабирование
+end note
+
+note bottom of metrics
+  Ключевые улучшения:
+  
+  Производительность:
+  - 100x увеличение пропускной способности
+  - 20x снижение времени отклика
+  - 4x повышение доступности
+  
+  Экономика:
+  - 60% снижение операционных расходов
+  - 3-4x ускорение разработки
+  - Снижение TCO на 40%
+  
+  Гибкость:
+  - Независимое развитие доменов
+  - Быстрое добавление новых сервисов
+  - Простота изменений и обновлений
+  
+  Надёжность:
+  - Отказоустойчивость
+  - Автоматическое восстановление
+  - Полный аудит операций
+end note
+
+@enduml
