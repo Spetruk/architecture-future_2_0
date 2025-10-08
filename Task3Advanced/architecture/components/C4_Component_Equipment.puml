@@ -1,0 +1,295 @@
+@startuml C4_Component_Equipment_Simple
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/database.puml
+
+skinparam rectangle {
+    BackgroundColor<<person>> LightBlue
+    BackgroundColor<<component>> LightSkyBlue
+    BackgroundColor<<database>> LightYellow
+    BackgroundColor<<external>> LightGray
+}
+
+title Компонентная диаграмма: Домен медицинского оборудования
+
+rectangle "==Биомедицинский инженер\nОбслуживание оборудования" as biomed_engineer <<person>>
+rectangle "==Врач\nИспользование оборудования" as doctor <<person>>
+rectangle "==Администратор клиники\nЗакупка и планирование" as admin <<person>>
+
+rectangle "==Kafka Event Bus\nСобытийная шина" as event_bus <<external>>
+rectangle "==Data Lakehouse\nХранилище данных" as data_lakehouse <<external>>
+rectangle "==Medical Domain\nИспользование оборудования\nв лечении" as medical_domain <<external>>
+rectangle "==Equipment Vendors\nПроизводители оборудования" as vendors <<external>>
+rectangle "==IoT Platform\nПлатформа для IoT устройств" as iot_platform <<external>>
+
+package "Домен медицинского оборудования" {
+    
+    rectangle "==API Gateway\nKong/APISIX\n\nЕдиная точка входа" as api_gateway <<component>>
+    
+    package "Управление жизненным циклом" {
+        rectangle "==Equipment Registry\nJava/Spring Boot\n\nРеестр медицинского\nоборудования" as equipment_registry <<component>>
+        
+        rectangle "==Asset Management\nJava/Spring Boot\n\nУправление активами\nи инвентаризация" as asset_management <<component>>
+        
+        rectangle "==Maintenance Service\nGolang\n\nПлановое и аварийное\nобслуживание" as maintenance_service <<component>>
+        
+        rectangle "==Calibration Service\nJava/Spring Boot\n\nКалибровка и поверка\nоборудования" as calibration_service <<component>>
+        
+        rectangle "==Lifecycle Tracking\nGolang\n\nОтслеживание жизненного\nцикла от закупки до\nутилизации" as lifecycle_tracking <<component>>
+    }
+    
+    package "Мониторинг и телеметрия" {
+        rectangle "==Telemetry Collector\nGolang\n\nСбор телеметрии с\nустройств IoT" as telemetry_collector <<component>>
+        
+        rectangle "==Equipment Monitor\nPython\n\nМониторинг состояния\nоборудования" as equipment_monitor <<component>>
+        
+        rectangle "==Predictive Maintenance\nPython/ML\n\nПредиктивное обслуживание\nна основе ML" as predictive_maintenance <<component>>
+        
+        rectangle "==Anomaly Detector\nPython/ML\n\nОбнаружение аномалий\nв работе оборудования" as anomaly_detector <<component>>
+    }
+    
+    package "Управление использованием" {
+        rectangle "==Usage Tracking\nGolang\n\nОтслеживание использования\nоборудования" as usage_tracking <<component>>
+        
+        rectangle "==Utilization Analytics\nPython\n\nАналитика загруженности\nоборудования" as utilization_analytics <<component>>
+        
+        rectangle "==Scheduling Service\nJava/Spring Boot\n\nПланирование использования\nоборудования" as scheduling_service <<component>>
+    }
+    
+    package "Compliance и безопасность" {
+        rectangle "==Regulatory Compliance\nJava\n\nСоответствие медицинским\nстандартам и сертификатам" as regulatory_compliance <<component>>
+        
+        rectangle "==Safety Monitor\nPython\n\nМониторинг безопасности\nиспользования" as safety_monitor <<component>>
+        
+        rectangle "==Incident Management\nJava/Spring Boot\n\nУправление инцидентами\nи отказами" as incident_management <<component>>
+    }
+    
+    package "Интеграции" {
+        rectangle "==Vendor Integration\nJava\n\nИнтеграция с производителями\nдля обновлений и поддержки" as vendor_integration <<component>>
+        
+        rectangle "==DICOM Gateway\nGolang\n\nИнтеграция с медицинскими\nизображениями (DICOM)" as dicom_gateway <<component>>
+        
+        rectangle "==HL7 Integration\nJava\n\nОбмен данными по\nстандарту HL7" as hl7_integration <<component>>
+    }
+    
+    package "Публикация событий" {
+        rectangle "==Outbox Processor\nDebezium/CDC\n\nГарантированная доставка\nсобытий" as outbox_processor <<component>>
+        
+        rectangle "==Event Publisher\nGolang\n\nПубликация в Kafka" as event_publisher <<component>>
+    }
+    
+    package "Продукты данных" {
+        rectangle "==Equipment Performance DP\nPython/dbt\n\nПроизводительность\nоборудования" as equipment_perf_dp <<component>>
+        
+        rectangle "==Maintenance Cost DP\nPython/dbt\n\nСтоимость обслуживания" as maintenance_cost_dp <<component>>
+        
+        rectangle "==Equipment Utilization DP\nPython/dbt\n\nЗагруженность оборудования" as utilization_dp <<component>>
+        
+        rectangle "==Predictive Insights DP\nPython/dbt\n\nПрогнозы отказов и\nобслуживания" as predictive_insights_dp <<component>>
+    }
+    
+    rectangle "==Operational DB\n<$database>\nPostgreSQL\n\nОперационные данные\nоборудования" as operational_db <<database>>
+    
+    rectangle "==Telemetry DB\n<$database>\nTimescaleDB\n\nВременные ряды телеметрии" as telemetry_db <<database>>
+    
+    rectangle "==Event Consumer\nGolang\n\nПодписка на события\nмедицинского домена" as event_consumer <<component>>
+    
+    rectangle "==Equipment Cache\nRedis\n\nКэш состояния оборудования" as equipment_cache <<component>>
+    
+    rectangle "==Document Storage\nS3/MinIO\n\nДокументация, сертификаты,\nинструкции" as document_storage <<component>>
+}
+
+biomed_engineer -down-> api_gateway : Управление обслуживанием\n(HTTPS)
+doctor -down-> api_gateway : Запрос на использование\nоборудования\n(HTTPS)
+admin -down-> api_gateway : Планирование закупок\n(HTTPS)
+
+api_gateway -down-> equipment_registry : Маршрутизирует запросы
+api_gateway -down-> asset_management : Маршрутизирует запросы
+api_gateway -down-> maintenance_service : Маршрутизирует запросы
+api_gateway -down-> scheduling_service : Маршрутизирует запросы
+
+equipment_registry -down-> operational_db : CRUD операции\n(SQL)
+asset_management -down-> operational_db : Управление активами\n(SQL)
+maintenance_service -down-> operational_db : Планирование ТО\n(SQL)
+calibration_service -down-> operational_db : Журнал калибровок\n(SQL)
+lifecycle_tracking -down-> operational_db : История оборудования\n(SQL)
+
+equipment_registry -right-> equipment_cache : Кэш характеристик
+equipment_registry -down-> document_storage : Хранение документации\nи сертификатов
+
+iot_platform -down-> telemetry_collector : Поток телеметрии\n(MQTT/CoAP)
+telemetry_collector -down-> telemetry_db : Сохранение метрик\n(Time-series)
+telemetry_db -down-> equipment_monitor : Анализ показателей
+
+equipment_monitor -down-> anomaly_detector : Обнаружение аномалий\n(ML)
+equipment_monitor -down-> predictive_maintenance : Прогноз отказов\n(ML)
+
+anomaly_detector -up-> incident_management : Создание инцидента\nпри аномалии
+predictive_maintenance -up-> maintenance_service : Рекомендации по ТО
+
+usage_tracking -down-> operational_db : Логирование\nиспользования
+usage_tracking -right-> utilization_analytics : Анализ загруженности
+utilization_analytics -up-> scheduling_service : Оптимизация расписания
+
+regulatory_compliance -down-> operational_db : Проверка сертификатов
+safety_monitor -down-> telemetry_db : Мониторинг параметров\nбезопасности
+incident_management -down-> operational_db : Управление инцидентами
+
+vendor_integration -right-> vendors : Обновления ПО\nи запчасти\n(REST API)
+dicom_gateway -right-> medical_domain : Медицинские изображения\n(DICOM)
+hl7_integration -right-> medical_domain : Обмен данными\n(HL7 FHIR)
+
+operational_db -down-> outbox_processor : Change Data Capture\n(CDC)
+telemetry_db -down-> outbox_processor : События телеметрии
+outbox_processor -right-> event_publisher : События из Outbox
+event_publisher -right-> event_bus : Публикует события:\nEquipmentAvailable,\nMaintenanceRequired,\nAnomalyDetected,\nEquipmentFailure,\nCalibrationDue
+
+event_bus -down-> event_consumer : Подписан на события:\nTreatmentScheduled,\nEquipmentRequested
+event_consumer -up-> scheduling_service : Резервирование\nоборудования
+event_consumer -up-> usage_tracking : Начало использования
+
+event_bus -down-> data_lakehouse : Поток событий\n(Stream)
+telemetry_db -down-> data_lakehouse : Экспорт телеметрии\n(Batch)
+
+equipment_perf_dp -down-> data_lakehouse : Читает данные\n(SQL)
+maintenance_cost_dp -down-> data_lakehouse : Читает данные\n(SQL)
+utilization_dp -down-> data_lakehouse : Читает данные\n(SQL)
+predictive_insights_dp -down-> data_lakehouse : Читает данные\n(SQL)
+
+event_bus -right-> medical_domain : События о доступности\nоборудования
+
+note right of telemetry_collector
+  IoT телеметрия с медицинского
+  оборудования:
+  
+  Параметры мониторинга:
+  - Температура
+  - Вибрация
+  - Энергопотребление
+  - Счётчики использования
+  - Статус компонентов
+  
+  Протоколы:
+  - MQTT для IoT устройств
+  - CoAP для constraint devices
+  - HTTP/REST для smart equipment
+  
+  Frequency: 1-60 sec
+end note
+
+note right of predictive_maintenance
+  ML-модель для предиктивного
+  обслуживания:
+  
+  Алгоритмы:
+  - LSTM для временных рядов
+  - Isolation Forest для аномалий
+  - Random Forest для классификации
+  
+  Предсказывает:
+  - Вероятность отказа (0-100%)
+  - Время до отказа (days)
+  - Рекомендуемые действия
+  
+  Обучение:
+  - Исторические данные отказов
+  - Телеметрия
+  - Журналы обслуживания
+  
+  Re-training: Weekly
+end note
+
+note right of dicom_gateway
+  DICOM (Digital Imaging and
+  Communications in Medicine):
+  
+  Интеграция с:
+  - CT сканеры
+  - MRI аппараты
+  - Рентген аппараты
+  - Ультразвуковые аппараты
+  
+  Функции:
+  - Приём изображений
+  - Хранение в PACS
+  - Передача в AI-сервисы
+  - Архивирование
+end note
+
+note right of regulatory_compliance
+  Соответствие стандартам:
+  
+  - ISO 13485 (Medical Devices QMS)
+  - IEC 62304 (Medical Software)
+  - FDA regulations
+  - CE marking
+  - Росздравнадзор требования
+  
+  Отслеживание:
+  - Сертификаты и их сроки
+  - Результаты инспекций
+  - Compliance reports
+  - Risk assessments
+end note
+
+note right of utilization_analytics
+  Аналитика использования:
+  
+  Метрики:
+  - Utilization rate (%)
+  - Idle time
+  - Peak usage hours
+  - Equipment turnover
+  
+  Оптимизация:
+  - Перераспределение между
+    клиниками
+  - Планирование закупок
+  - Выявление недоиспользуемого
+    оборудования
+  
+  ROI анализ для инвестиций
+end note
+
+note right of equipment_perf_dp
+  Data Product
+  Владелец: Equipment Domain Team
+  
+  Consumers:
+  - BI Portal
+  - Procurement planning
+  - Maintenance scheduling
+  - Finance (depreciation)
+  
+  SLA: Near real-time (15 min)
+  
+  Ключевые метрики:
+  - MTBF (Mean Time Between Failures)
+  - MTTR (Mean Time To Repair)
+  - Overall Equipment Effectiveness
+  - Cost per usage hour
+  - Availability percentage
+end note
+
+note right of incident_management
+  Управление инцидентами:
+  
+  Классификация:
+  - Critical: угроза безопасности
+  - High: оборудование недоступно
+  - Medium: деградация работы
+  - Low: косметические проблемы
+  
+  Workflow:
+  1. Обнаружение (auto/manual)
+  2. Тriage и приоритизация
+  3. Назначение инженеру
+  4. Диагностика
+  5. Устранение
+  6. Верификация
+  7. Постмортем
+  
+  SLA по критичности
+end note
+
+@enduml

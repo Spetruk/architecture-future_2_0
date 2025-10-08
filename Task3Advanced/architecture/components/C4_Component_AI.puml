@@ -1,0 +1,169 @@
+@startuml C4_Component_AI_Simple
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/database.puml
+
+skinparam rectangle {
+    BackgroundColor<<person>> LightBlue
+    BackgroundColor<<component>> LightSkyBlue
+    BackgroundColor<<database>> LightYellow
+    BackgroundColor<<external>> LightGray
+}
+
+title Компонентная диаграмма: AI-сервисы домен
+
+rectangle "==Врач\nПолучает AI-рекомендации" as doctor <<person>>
+rectangle "==Data Scientist\nОбучает и развёртывает\nмодели" as data_scientist <<person>>
+
+rectangle "==Kafka Event Bus\nСобытийная шина" as event_bus <<external>>
+rectangle "==Data Lakehouse\nХранилище данных" as data_lakehouse <<external>>
+rectangle "==Medical Domain\nИсточник медицинских\nданных" as medical_domain <<external>>
+
+package "AI-сервисы домен" {
+    
+    rectangle "==API Gateway\nKong/APISIX\n\nЕдиная точка входа" as api_gateway <<component>>
+    
+    package "Inference сервисы" {
+        rectangle "==Diagnostic Assistant\nPython/FastAPI\n\nПомощь в диагностике\nзаболеваний" as diagnostic_assistant <<component>>
+        
+        rectangle "==Image Analysis Service\nPython/TensorFlow\n\nАнализ медицинских\nснимков (CT, MRI, X-Ray)" as image_analysis <<component>>
+        
+        rectangle "==Treatment Recommendation\nPython/PyTorch\n\nРекомендации по лечению" as treatment_recommendation <<component>>
+        
+        rectangle "==Risk Prediction Service\nPython/Scikit-learn\n\nПрогноз рисков и\nосложнений" as risk_prediction <<component>>
+    }
+    
+    package "MLOps платформа" {
+        rectangle "==Model Registry\nMLflow\n\nРеестр ML-моделей\nи экспериментов" as model_registry <<component>>
+        
+        rectangle "==Feature Store\nFeast\n\nХранилище признаков\nдля ML" as feature_store <<component>>
+        
+        rectangle "==Model Training Pipeline\nKubeflow/Airflow\n\nОбучение и переобучение\nмоделей" as training_pipeline <<component>>
+        
+        rectangle "==Model Serving\nKServe/Seldon\n\nДеплой и версионирование\nмоделей" as model_serving <<component>>
+    }
+    
+    package "Обработка данных" {
+        rectangle "==Data Preprocessing\nPython/Pandas\n\nПредобработка медицинских\nданных" as data_preprocessing <<component>>
+        
+        rectangle "==Anonymization Service\nPython\n\nОбезличивание персональных\nданных" as anonymization <<component>>
+    }
+    
+    package "Мониторинг моделей" {
+        rectangle "==Model Monitor\nEvidently AI\n\nМониторинг качества\nи drift моделей" as model_monitor <<component>>
+        
+        rectangle "==Explainability Service\nSHAP/LIME\n\nОбъяснение предсказаний\nмоделей" as explainability <<component>>
+    }
+    
+    rectangle "==Model Storage\n<$database>\nS3/MinIO\n\nХранение артефактов\nмоделей" as model_storage <<database>>
+    
+    rectangle "==Inference Cache\nRedis\n\nКэш предсказаний" as inference_cache <<component>>
+    
+    rectangle "==Event Consumer\nPython\n\nПодписка на медицинские\nсобытия" as event_consumer <<component>>
+    
+    rectangle "==Event Publisher\nPython\n\nПубликация результатов\nанализа" as event_publisher <<component>>
+    
+    package "Продукты данных" {
+        rectangle "==Model Performance DP\nPython/dbt\n\nМетрики качества моделей" as model_performance_dp <<component>>
+        
+        rectangle "==AI Insights DP\nPython/dbt\n\nАналитика по использованию\nAI-сервисов" as ai_insights_dp <<component>>
+    }
+}
+
+doctor -down-> api_gateway : Запрос AI-рекомендаций\n(HTTPS)
+data_scientist -down-> model_registry : Управление моделями\nи экспериментами
+
+api_gateway -down-> diagnostic_assistant : Маршрутизирует запросы
+api_gateway -down-> image_analysis : Маршрутизирует запросы
+api_gateway -down-> treatment_recommendation : Маршрутизирует запросы
+api_gateway -down-> risk_prediction : Маршрутизирует запросы
+
+diagnostic_assistant -down-> model_serving : Получает предсказания
+image_analysis -down-> model_serving : Получает предсказания
+treatment_recommendation -down-> model_serving : Получает предсказания
+risk_prediction -down-> model_serving : Получает предсказания
+
+diagnostic_assistant -right-> inference_cache : Проверяет кэш
+diagnostic_assistant -down-> explainability : Запрос объяснения
+
+model_serving -up-> model_registry : Загружает модели
+model_registry -down-> model_storage : Хранит артефакты
+
+event_bus -down-> event_consumer : Подписан на события:\nPatientDataUpdated,\nNewDiagnosticResults,\nTreatmentStarted
+
+event_consumer -up-> data_preprocessing : Обрабатывает данные
+data_preprocessing -right-> anonymization : Обезличивание
+anonymization -right-> feature_store : Сохраняет признаки
+
+feature_store -down-> training_pipeline : Предоставляет данные\nдля обучения
+training_pipeline -down-> data_lakehouse : Читает исторические\nданные\n(SQL)
+training_pipeline -up-> model_registry : Регистрирует новые\nмодели
+
+model_serving -down-> model_monitor : Логирует предсказания
+model_monitor -down-> event_publisher : Алерты о drift
+
+event_publisher -right-> event_bus : Публикует события:\nDiagnosisGenerated,\nRiskAssessed,\nModelDriftDetected
+
+event_bus -down-> data_lakehouse : Поток событий\n(Stream)
+model_performance_dp -down-> data_lakehouse : Читает данные\n(SQL)
+ai_insights_dp -down-> data_lakehouse : Читает данные\n(SQL)
+
+event_publisher -right-> medical_domain : Результаты анализа
+
+note right of image_analysis
+  Deep Learning модели:
+  - ResNet для классификации
+  - U-Net для сегментации
+  - Vision Transformer
+  
+  Обработка медицинских снимков:
+  - CT (Computed Tomography)
+  - MRI (Magnetic Resonance)
+  - X-Ray
+  
+  GPU acceleration required
+  Latency SLA: < 5 sec
+end note
+
+note right of model_monitor
+  Мониторинг ML-моделей:
+  
+  - Data Drift: изменение
+    распределения входных данных
+  
+  - Concept Drift: изменение
+    целевой переменной
+  
+  - Model Performance: точность,
+    precision, recall
+  
+  Триггеры переобучения при
+  деградации качества
+end note
+
+note right of feature_store
+  Централизованное хранилище
+  признаков для ML:
+  
+  - Online serving (low latency)
+  - Offline storage (training)
+  - Point-in-time correctness
+  - Feature versioning
+  
+  Переиспользование признаков
+  между моделями
+end note
+
+note right of explainability
+  Объяснение предсказаний
+  для врачей:
+  
+  - SHAP values
+  - LIME explanations
+  - Attention visualization
+  
+  Критично для медицинских
+  решений и регуляторов
+end note
+
+@enduml
