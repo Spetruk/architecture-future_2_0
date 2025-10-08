@@ -1,0 +1,220 @@
+@startuml Data_Mesh_Roadmap
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/user.puml
+!include ICONURL/font-awesome-5/server.puml
+
+skinparam rectangle {
+    BackgroundColor<<phase>> LightBlue
+    BackgroundColor<<milestone>> LightGreen
+    BackgroundColor<<role>> LightYellow
+    BackgroundColor<<metric>> LightCoral
+    BackgroundColor<<risk>> LightPink
+}
+
+title Стратегический роадмап внедрения Data Mesh - Экосистема "Будущее 2.0"
+
+' Основные этапы
+rectangle "==Этап 1: Фундамент\n\nМесяцы 1-6\n\nЦели:\n- Базовая платформа данных\n- Пилотный проект\n- Обучение команд\n- Процессы и стандарты" as phase1 <<phase>>
+
+rectangle "==Этап 2: Масштабирование\n\nМесяцы 7-18\n\nЦели:\n- 3-4 домена с Data Mesh\n- 10-15 data products\n- Автоматизация\n- Self-service аналитика" as phase2 <<phase>>
+
+rectangle "==Этап 3: Оптимизация\n\nМесяцы 19-36\n\nЦели:\n- Полная Data Mesh\n- Advanced analytics\n- Автоматизация\n- Data-driven культура" as phase3 <<phase>>
+
+' Ключевые роли
+rectangle "==Data Product Owner\n\nОтветственность:\n- Требования к data products\n- Приоритизация развития\n- Связь бизнес-техника\n- Жизненный цикл продуктов\n\nКоличество: 2-3 человека" as dpo <<role>>
+
+rectangle "==Data Engineer\n\nОтветственность:\n- Разработка data products\n- Пайплайны обработки\n- Качество данных\n- Интеграция с платформой\n\nКоличество: 6-8 человек" as de <<role>>
+
+rectangle "==BI-аналитик\n\nОтветственность:\n- Аналитические дашборды\n- Self-service аналитика\n- Бизнес-отчётность\n- Обучение пользователей\n\nКоличество: 4-6 человек" as bi <<role>>
+
+rectangle "==Data Platform Engineer\n\nОтветственность:\n- Развитие платформы\n- Инфраструктура Data Mesh\n- Инструменты и сервисы\n- Стандарты и governance\n\nКоличество: 3-4 человека" as dpe <<role>>
+
+rectangle "==Data Governance Specialist\n\nОтветственность:\n- Политики управления\n- Качество и безопасность\n- Compliance и аудит\n- Метаданные и каталог\n\nКоличество: 2-3 человека" as dgs <<role>>
+
+' Ключевые вехи
+rectangle "==Месяц 6: Пилот готов\n\nРезультаты:\n- Работающая платформа\n- Первый data product\n- Обученная команда\n- Базовые процессы" as milestone1 <<milestone>>
+
+rectangle "==Месяц 18: Масштабирование\n\nРезультаты:\n- 4 домена с Data Mesh\n- 12+ data products\n- Автоматизированные процессы\n- 80% self-service" as milestone2 <<milestone>>
+
+rectangle "==Месяц 36: Полная трансформация\n\nРезультаты:\n- Полная Data Mesh\n- 25+ data products\n- Advanced analytics\n- Data-driven организация" as milestone3 <<milestone>>
+
+' Ключевые метрики
+rectangle "==Технические метрики\n\nВремя создания data product:\n- Текущее: 4-6 недель\n- Год 1: 2 недели\n- Год 2: 1 неделя\n- Год 3: 3-5 дней\n\nКоличество data products:\n- Год 1: 5\n- Год 2: 15\n- Год 3: 25+" as tech_metrics <<metric>>
+
+rectangle "==Бизнес-метрики\n\nSelf-service аналитика:\n- Текущее: 20%\n- Год 1: 50%\n- Год 2: 80%\n- Год 3: 90%\n\nAI/ML модели:\n- Год 1: 2\n- Год 2: 8\n- Год 3: 20+" as business_metrics <<metric>>
+
+rectangle "==Операционные метрики\n\nВремя развёртывания:\n- Текущее: 2-4 недели\n- Год 1: 1 неделя\n- Год 2: 2-3 дня\n- Год 3: 1 день\n\nАвтоматизация:\n- Год 1: 60%\n- Год 2: 80%\n- Год 3: 90%" as ops_metrics <<metric>>
+
+' Основные риски
+rectangle "==Технические риски\n\nВысокий приоритет:\n- Сложность миграции данных\n- Производительность платформы\n- Интеграция с legacy\n- Безопасность данных\n\nМитигация:\n- Поэтапная миграция\n- Нагрузочное тестирование\n- Адаптеры и API Gateway\n- Security by design" as tech_risks <<risk>>
+
+rectangle "==Организационные риски\n\nВысокий приоритет:\n- Сопротивление изменениям\n- Нехватка экспертизы\n- Изменение процессов\n- Бюджетные ограничения\n\nМитигация:\n- Обучение и вовлечение\n- Рекрутинг и консультанты\n- Постепенные изменения\n- Поэтапное финансирование" as org_risks <<risk>>
+
+' Детальный план по кварталам
+rectangle "==Квартал 1 (М1-3): Подготовка\n\nМ1: Планирование, обучение\nМ2: Инфраструктура, Kafka\nМ3: Пилотный data product\n\nРоли: DPE, DPO\nРезультат: План, команда, платформа" as q1 <<phase>>
+
+rectangle "==Квартал 2 (М4-6): Пилот\n\nМ4: Развитие пилотного продукта\nМ5: Пользователи, обратная связь\nМ6: Оптимизация, стандарты\n\nРоли: DE, BI, DPO\nРезультат: Стабильный data product" as q2 <<phase>>
+
+rectangle "==Квартал 3-4 (М7-12): Масштабирование\n\nМ7-9: Финтех домен\nМ10-12: AI домен\n\nРоли: DE, BI, ML Engineer\nРезультат: Financial + AI data products" as q3_4 <<phase>>
+
+rectangle "==Квартал 5-6 (М13-18): Расширение\n\nМ13-15: Фармацевтический домен\nМ16-18: Оборудование домен\n\nРоли: DE, DPO, IoT Specialist\nРезультат: Pharma + Equipment data products" as q5_6 <<phase>>
+
+' Связи между этапами
+phase1 -right-> phase2 : Переход к масштабированию
+phase2 -right-> phase3 : Переход к оптимизации
+
+phase1 -down-> milestone1 : Достижение пилота
+phase2 -down-> milestone2 : Достижение масштабирования
+phase3 -down-> milestone3 : Достижение полной трансформации
+
+' Роли участвуют во всех этапах
+dpo -down-> phase1 : Участвует
+dpo -down-> phase2 : Участвует
+dpo -down-> phase3 : Участвует
+
+de -down-> phase1 : Участвует
+de -down-> phase2 : Участвует
+de -down-> phase3 : Участвует
+
+bi -down-> phase1 : Участвует
+bi -down-> phase2 : Участвует
+bi -down-> phase3 : Участвует
+
+dpe -down-> phase1 : Участвует
+dpe -down-> phase2 : Участвует
+dpe -down-> phase3 : Участвует
+
+dgs -down-> phase1 : Участвует
+dgs -down-> phase2 : Участвует
+dgs -down-> phase3 : Участвует
+
+' Метрики отслеживаются на всех этапах
+tech_metrics -up-> phase1 : Отслеживается
+tech_metrics -up-> phase2 : Отслеживается
+tech_metrics -up-> phase3 : Отслеживается
+
+business_metrics -up-> phase1 : Отслеживается
+business_metrics -up-> phase2 : Отслеживается
+business_metrics -up-> phase3 : Отслеживается
+
+ops_metrics -up-> phase1 : Отслеживается
+ops_metrics -up-> phase2 : Отслеживается
+ops_metrics -up-> phase3 : Отслеживается
+
+' Риски управляются на всех этапах
+tech_risks -up-> phase1 : Управляется
+tech_risks -up-> phase2 : Управляется
+tech_risks -up-> phase3 : Управляется
+
+org_risks -up-> phase1 : Управляется
+org_risks -up-> phase2 : Управляется
+org_risks -up-> phase3 : Управляется
+
+' Детальный план
+q1 -down-> q2 : Переход к пилоту
+q2 -down-> q3_4 : Переход к масштабированию
+q3_4 -down-> q5_6 : Переход к расширению
+
+note right of phase1
+  Этап 1: Фундамент
+  
+  Ключевые активности:
+  - Создание Data Mesh команды
+  - Обучение ключевых ролей
+  - Развёртывание Kafka кластера
+  - Настройка Data Lakehouse
+  - Пилотный проект (Медицинский домен)
+  
+  Инвестиции: $630,000
+  Команда: 8-10 человек
+  Результат: Работающая платформа + первый data product
+end note
+
+note right of phase2
+  Этап 2: Масштабирование
+  
+  Ключевые активности:
+  - Внедрение в 4 доменах
+  - Создание 12+ data products
+  - Автоматизация процессов
+  - Self-service аналитика
+  
+  Инвестиции: $950,000
+  Команда: 15-20 человек
+  Результат: 80% self-service аналитика
+end note
+
+note right of phase3
+  Этап 3: Оптимизация
+  
+  Ключевые активности:
+  - Полная Data Mesh архитектура
+  - Advanced analytics и AI/ML
+  - Автоматизация и оптимизация
+  - Data-driven культура
+  
+  Инвестиции: $450,000
+  Команда: 20-25 человек
+  Результат: Data-driven организация
+end note
+
+note bottom of milestone1
+  Ключевые результаты пилота:
+  
+  Технические:
+  - Работающая платформа данных
+  - Первый data product в продакшене
+  - Базовые процессы и стандарты
+  
+  Бизнес:
+  - Сокращение времени создания аналитики с 2 недель до 2 дней
+  - Повышение качества данных на 30%
+  - 50% запросов решаются без IT
+  
+  Команда:
+  - Обученная Data Mesh команда
+  - Установленные процессы разработки
+  - Первые пользователи и обратная связь
+end note
+
+note bottom of milestone2
+  Ключевые результаты масштабирования:
+  
+  Технические:
+  - 4 домена с Data Mesh
+  - 12+ data products
+  - Автоматизированные процессы
+  
+  Бизнес:
+  - Сокращение времени на аналитику на 70%
+  - 5+ новых AI/ML моделей в продакшене
+  - Снижение операционных затрат на 25%
+  
+  Операции:
+  - 80% self-service аналитика
+  - Автоматизация 80% процессов
+  - Время развёртывания 2-3 дня
+end note
+
+note bottom of milestone3
+  Ключевые результаты полной трансформации:
+  
+  Технические:
+  - Полная Data Mesh архитектура
+  - 25+ data products
+  - Advanced analytics и AI
+  
+  Бизнес:
+  - Лидерство в data-driven решениях
+  - 20+ AI/ML моделей в продакшене
+  - 90% процессов автоматизированы
+  
+  Культура:
+  - Data-driven мышление
+  - Self-service подход
+  - Экспериментальная культура
+  - Коллаборация между доменами
+end note
+
+@enduml
