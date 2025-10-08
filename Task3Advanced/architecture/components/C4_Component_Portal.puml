@@ -1,0 +1,113 @@
+@startuml C4_Component_Portal_Simple
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/database.puml
+
+skinparam rectangle {
+    BackgroundColor<<person>> LightBlue
+    BackgroundColor<<component>> LightSkyBlue
+    BackgroundColor<<database>> LightYellow
+    BackgroundColor<<external>> LightGray
+}
+
+title Компонентная диаграмма: Портал самообслуживания
+
+rectangle "==Бизнес-аналитик" as analyst <<person>>
+rectangle "==Руководитель" as executive <<person>>
+rectangle "==Data Scientist" as data_scientist <<person>>
+
+rectangle "==Data Lakehouse\nApache Iceberg +\nDremio" as data_lakehouse <<external>>
+rectangle "==DataHub\nКаталог данных" as data_catalog <<external>>
+
+package "Портал самообслуживания" {
+    
+    rectangle "==Web Application\nReact\n\nПользовательский\nинтерфейс" as web_app <<component>>
+    
+    package "BI слой" {
+        rectangle "==Report Engine\nPower BI Embedded\n\nПостроение отчётов" as report_engine <<component>>
+        
+        rectangle "==Dashboard Service\nNode.js\n\nУправление дашбордами" as dashboard_service <<component>>
+        
+        rectangle "==Ad-hoc Query Builder\nReact + SQL\n\nКонструктор запросов" as ad_hoc_query <<component>>
+    }
+    
+    package "Слой доступа к данным" {
+        rectangle "==Query Service\nJava/Spring\n\nВыполнение запросов" as query_service <<component>>
+        
+        rectangle "==Semantic Layer\ndbt Metrics\n\nБизнес-метрики и\nопределения" as semantic_layer <<component>>
+        
+        rectangle "==Query Cache\nRedis\n\nКэширование результатов" as cache <<component>>
+    }
+    
+    package "Безопасность" {
+        rectangle "==Auth Service\nKeycloak\n\nАутентификация и\nавторизация" as auth_service <<component>>
+        
+        rectangle "==RBAC Engine\nOPA\n\nКонтроль доступа\nк данным" as rbac_engine <<component>>
+        
+        rectangle "==Audit Log\nElasticsearch\n\nЖурналирование доступа" as audit_log <<component>>
+    }
+    
+    package "Обнаружение данных" {
+        rectangle "==Catalog UI\nReact\n\nИнтерфейс каталога\nданных" as catalog_ui <<component>>
+        
+        rectangle "==Search Service\nElasticsearch\n\nПоиск по метаданным" as search_service <<component>>
+        
+        rectangle "==Lineage Viewer\nReact + D3\n\nВизуализация\nпроисхождения данных" as lineage_viewer <<component>>
+    }
+    
+    rectangle "==Notification Service\nNode.js\n\nУведомления о готовности\nотчётов" as notification_service <<component>>
+    
+    rectangle "==Export Service\nPython\n\nЭкспорт данных\n(Excel, CSV, PDF)" as export_service <<component>>
+    
+    rectangle "==Portal DB\n<$database>\nPostgreSQL\n\nПользовательские дашборды\nи настройки" as portal_db <<database>>
+}
+
+analyst -down-> web_app : Строит отчёты\n(HTTPS)
+executive -down-> web_app : Просматривает\nдашборды\n(HTTPS)
+data_scientist -down-> web_app : Ad-hoc анализ\n(HTTPS)
+
+web_app -down-> auth_service : Аутентификация\n(OAuth 2.0)
+web_app -down-> report_engine : Открывает отчёты
+web_app -down-> dashboard_service : Управляет дашбордами
+web_app -down-> ad_hoc_query : Строит запросы
+web_app -down-> catalog_ui : Поиск данных
+
+report_engine -down-> query_service : Запросы к данным\n(SQL)
+dashboard_service -down-> portal_db : Сохраняет\nконфигурации
+ad_hoc_query -down-> query_service : Выполняет SQL
+
+query_service -right-> semantic_layer : Получает определения\nметрик
+query_service -down-> cache : Проверяет кэш
+query_service -down-> rbac_engine : Проверяет права\nдоступа
+query_service -down-> data_lakehouse : Выполняет запросы\n(SQL/JDBC)
+query_service -down-> audit_log : Логирует запросы
+
+auth_service -down-> rbac_engine : Передаёт контекст\nпользователя
+rbac_engine -down-> data_catalog : Получает политики\nдоступа к данным
+
+catalog_ui -down-> search_service : Поиск датасетов
+search_service -down-> data_catalog : Индексирует\nметаданные
+lineage_viewer -down-> data_catalog : Получает граф\nlineage
+
+dashboard_service -down-> notification_service : Уведомляет\nо готовности
+notification_service -up-> analyst : Email/Push\nуведомления
+query_service -down-> export_service : Экспорт результатов
+
+note right of semantic_layer
+  Semantic Layer:
+  Единые определения 
+  бизнес-метрик
+  - Revenue, LTV
+  - Patient Flow Metrics
+  - Medical KPIs
+end note
+
+note right of rbac_engine
+  Row-Level Security:
+  Доступ на основе:
+  - Роль пользователя
+  - Домен данных
+  - Географический регион
+end note
+
+@enduml

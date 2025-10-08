@@ -1,0 +1,103 @@
+@startuml C4_Container_DataPlatform_Simple
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/database.puml
+!include ICONURL/font-awesome-5/cogs.puml
+
+skinparam rectangle {
+    BackgroundColor<<person>> LightBlue
+    BackgroundColor<<container>> SkyBlue
+    BackgroundColor<<external>> LightGray
+}
+
+title Контейнерная диаграмма: Платформа данных (Data Mesh)
+
+rectangle "==Аналитик\n\nРаботает с данными" as analyst <<person>>
+rectangle "==Data Engineer\n\nНастраивает пайплайны" as data_engineer <<person>>
+
+rectangle "==Медицинские сервисы\nИсточник событий" as medical_services <<external>>
+rectangle "==Финтех сервисы\nИсточник событий" as fintech_services <<external>>
+rectangle "==AI сервисы\nИсточник событий" as ai_services <<external>>
+
+package "Платформа данных" {
+    
+    rectangle "==Событийная шина\n<$cogs>\nApache Kafka\n\nЦентрализованная шина\nсобытий с поддержкой\nstreaming" as event_bus <<container>>
+    
+    rectangle "==Реестр схем\nSchema Registry\n\nУправление схемами\nсобытий" as schema_registry <<container>>
+    
+    rectangle "==DLQ\nKafka Topic\n\nОбработка ошибочных\nсобытий" as dlq <<container>>
+    
+    package "Data Lakehouse" {
+        rectangle "==Объектное хранилище\n<$database>\nMinIO/S3\n\nХранение raw и\nобработанных данных" as object_storage <<container>>
+        
+        rectangle "==Каталог метаданных\nApache Nessie\n\nВерсионирование и\nуправление таблицами" as catalog <<container>>
+        
+        rectangle "==Табличный формат\nApache Iceberg\n\nACID-транзакции и\nуправление таблицами" as table_format <<container>>
+        
+        rectangle "==Движок запросов\nDremio/Trino\n\nSQL-интерфейс к данным" as query_engine <<container>>
+    }
+    
+    package "Потоковая обработка" {
+        rectangle "==Stream Processor\nApache Flink\n\nОбработка событий\nв реальном времени" as stream_processor <<container>>
+        
+        rectangle "==Batch Processor\nApache Spark\n\nПакетная обработка\nбольших объёмов" as batch_processor <<container>>
+    }
+    
+    rectangle "==Каталог данных\nDataHub\n\nОбнаружение и\nуправление данными" as data_catalog <<container>>
+    
+    package "Продукты данных по доменам" {
+        rectangle "==Medical Data Product\nPython/SQL\n\nДанные медицинского\nдомена" as medical_dp <<container>>
+        
+        rectangle "==Fintech Data Product\nPython/SQL\n\nДанные финтех домена" as fintech_dp <<container>>
+        
+        rectangle "==AI Data Product\nPython/SQL\n\nДанные AI домена" as ai_dp <<container>>
+    }
+    
+    rectangle "==Оркестратор ETL\nApache Airflow\n\nУправление пайплайнами\nданных" as etl_orchestrator <<container>>
+    
+    rectangle "==Мониторинг\nPrometheus + Grafana\n\nМониторинг платформы\nданных" as monitoring <<container>>
+}
+
+rectangle "==Портал самообслуживания\nPower BI / Tableau" as bi_portal <<external>>
+rectangle "==Legacy DWH\nSQL Server 2008\n(антикоррупционный слой)" as legacy_dwh <<external>>
+
+medical_services -down-> event_bus : Публикует события\n(Avro/JSON)
+fintech_services -down-> event_bus : Публикует события\n(Avro/JSON)
+ai_services -down-> event_bus : Публикует события\n(Avro/JSON)
+
+event_bus -right-> schema_registry : Валидирует схемы
+event_bus -down-> dlq : Ошибочные события
+
+event_bus -down-> stream_processor : Потоковые данные
+stream_processor -down-> object_storage : Записывает\nобработанные данные
+
+event_bus -down-> batch_processor : Пакетные данные
+batch_processor -down-> object_storage : Записывает агрегаты
+
+object_storage -right-> catalog : Управление\nметаданными
+catalog -right-> table_format : Версионирование\nтаблиц
+table_format -right-> query_engine : SQL-запросы
+
+query_engine -down-> medical_dp : Доступ к данным
+query_engine -down-> fintech_dp : Доступ к данным
+query_engine -down-> ai_dp : Доступ к данным
+
+medical_dp -down-> data_catalog : Регистрирует\nметаданные
+fintech_dp -down-> data_catalog : Регистрирует\nметаданные
+ai_dp -down-> data_catalog : Регистрирует\nметаданные
+
+etl_orchestrator -up-> stream_processor : Управляет джобами
+etl_orchestrator -up-> batch_processor : Управляет джобами
+
+analyst -down-> data_catalog : Ищет данные
+analyst -down-> bi_portal : Строит отчёты
+bi_portal -down-> query_engine : Запрашивает данные\n(SQL)
+
+data_engineer -down-> etl_orchestrator : Настраивает\nпайплайны
+
+monitoring -up-> event_bus : Мониторит
+monitoring -up-> stream_processor : Мониторит
+
+legacy_dwh -down-> object_storage : Миграция данных\n(фаза вывода)\n(Batch)
+
+@enduml

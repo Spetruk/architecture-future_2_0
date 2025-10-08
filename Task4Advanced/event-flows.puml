@@ -1,0 +1,232 @@
+@startuml Event_Flows_Detailed
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/user.puml
+!include ICONURL/font-awesome-5/server.puml
+
+skinparam rectangle {
+    BackgroundColor<<event>> LightGreen
+    BackgroundColor<<domain>> LightBlue
+    BackgroundColor<<kafka>> LightPink
+    BackgroundColor<<process>> LightYellow
+    BackgroundColor<<external>> LightGray
+}
+
+title Детальные потоки событий - Event Flows для экосистемы "Будущее 2.0"
+
+' Основные потоки событий
+rectangle "==Поток 1: Регистрация пациента\n\n1. PatientRegistered\n2. AccountCreated\n3. DataProductUpdated\n4. ModelTrainingTriggered" as flow_patient_registration <<process>>
+
+rectangle "==Поток 2: Лечебный процесс\n\n1. TreatmentStarted\n2. PrescriptionCreated\n3. InventoryChecked\n4. EquipmentReserved\n5. PaymentRequired\n6. TreatmentCompleted" as flow_treatment <<process>>
+
+rectangle "==Поток 3: AI диагностика\n\n1. DiagnosisRequested\n2. ModelPrediction\n3. DiagnosisCompleted\n4. RecommendationProvided\n5. TreatmentPlanUpdated" as flow_ai_diagnosis <<process>>
+
+rectangle "==Поток 4: Обслуживание оборудования\n\n1. AnomalyDetected\n2. MaintenanceScheduled\n3. EquipmentUnavailable\n4. AppointmentRescheduled\n5. MaintenanceCompleted" as flow_equipment_maintenance <<process>>
+
+rectangle "==Поток 5: Фармацевтический цикл\n\n1. PrescriptionCreated\n2. InventoryUpdated\n3. DrugSold\n4. PaymentProcessed\n5. StockLow\n6. ProcurementOrdered" as flow_pharma_cycle <<process>>
+
+' Детальные события с временными метками
+rectangle "==PatientRegistered\n\nВремя: T+0\nИсточник: Медицинский домен\n\nДанные:\n- patientId: uuid\n- personalInfo: object\n- contactInfo: object\n- registrationDate: timestamp" as event_1 <<event>>
+
+rectangle "==AccountCreated\n\nВремя: T+5s\nИсточник: Финтех домен\n\nДанные:\n- accountId: uuid\n- patientId: uuid\n- accountType: enum\n- initialBalance: decimal" as event_2 <<event>>
+
+rectangle "==DataProductUpdated\n\nВремя: T+10s\nИсточник: Платформа данных\n\nДанные:\n- dataProductId: uuid\n- updateType: enum\n- recordCount: integer\n- lastUpdated: timestamp" as event_3 <<event>>
+
+rectangle "==ModelTrainingTriggered\n\nВремя: T+15s\nИсточник: AI домен\n\nДанные:\n- trainingId: uuid\n- modelType: enum\n- dataSize: integer\n- triggerReason: string" as event_4 <<event>>
+
+rectangle "==TreatmentStarted\n\nВремя: T+0\nИсточник: Медицинский домен\n\nДанные:\n- treatmentId: uuid\n- patientId: uuid\n- doctorId: uuid\n- diagnosis: string\n- treatmentPlan: object" as event_5 <<event>>
+
+rectangle "==PrescriptionCreated\n\nВремя: T+30s\nИсточник: Медицинский домен\n\nДанные:\n- prescriptionId: uuid\n- treatmentId: uuid\n- medications: array\n- dosage: object\n- validUntil: date" as event_6 <<event>>
+
+rectangle "==InventoryChecked\n\nВремя: T+35s\nИсточник: Фармацевтический домен\n\nДанные:\n- checkId: uuid\n- prescriptionId: uuid\n- available: boolean\n- alternatives: array" as event_7 <<event>>
+
+rectangle "==EquipmentReserved\n\nВремя: T+40s\nИсточник: Оборудование домен\n\nДанные:\n- reservationId: uuid\n- equipmentId: uuid\n- treatmentId: uuid\n- reservedFrom: timestamp\n- reservedTo: timestamp" as event_8 <<event>>
+
+rectangle "==PaymentRequired\n\nВремя: T+45s\nИсточник: Медицинский домен\n\nДанные:\n- invoiceId: uuid\n- treatmentId: uuid\n- amount: decimal\n- dueDate: date\n- paymentMethod: enum" as event_9 <<event>>
+
+rectangle "==TreatmentCompleted\n\nВремя: T+2h\nИсточник: Медицинский домен\n\nДанные:\n- treatmentId: uuid\n- completionDate: timestamp\n- results: object\n- followUpRequired: boolean" as event_10 <<event>>
+
+rectangle "==DiagnosisRequested\n\nВремя: T+0\nИсточник: Медицинский домен\n\nДанные:\n- requestId: uuid\n- patientId: uuid\n- symptoms: array\n- medicalHistory: object\n- urgency: enum" as event_11 <<event>>
+
+rectangle "==ModelPrediction\n\nВремя: T+5s\nИсточник: AI домен\n\nДанные:\n- predictionId: uuid\n- modelId: uuid\n- inputData: object\n- prediction: object\n- confidence: decimal" as event_12 <<event>>
+
+rectangle "==DiagnosisCompleted\n\nВремя: T+10s\nИсточник: AI домен\n\nДанные:\n- diagnosisId: uuid\n- patientId: uuid\n- condition: string\n- confidence: decimal\n- evidence: array\n- recommendations: array" as event_13 <<event>>
+
+rectangle "==RecommendationProvided\n\nВремя: T+15s\nИсточник: AI домен\n\nДанные:\n- recommendationId: uuid\n- diagnosisId: uuid\n- treatmentOptions: array\n- drugRecommendations: array\n- lifestyleAdvice: array" as event_14 <<event>>
+
+rectangle "==TreatmentPlanUpdated\n\nВремя: T+20s\nИсточник: Медицинский домен\n\nДанные:\n- planId: uuid\n- treatmentId: uuid\n- updatedPlan: object\n- aiRecommendations: object\n- doctorApproval: boolean" as event_15 <<event>>
+
+rectangle "==AnomalyDetected\n\nВремя: T+0\nИсточник: Оборудование домен\n\nДанные:\n- anomalyId: uuid\n- equipmentId: uuid\n- anomalyType: enum\n- severity: enum\n- detectedMetrics: object\n- recommendation: string" as event_16 <<event>>
+
+rectangle "==MaintenanceScheduled\n\nВремя: T+5s\nИсточник: Оборудование домен\n\nДанные:\n- maintenanceId: uuid\n- equipmentId: uuid\n- scheduledDate: timestamp\n- estimatedDuration: integer\n- technicianId: uuid" as event_17 <<event>>
+
+rectangle "==EquipmentUnavailable\n\nВремя: T+10s\nИсточник: Оборудование домен\n\nДанные:\n- equipmentId: uuid\n- unavailableFrom: timestamp\n- unavailableTo: timestamp\n- reason: string\n- alternativeEquipment: array" as event_18 <<event>>
+
+rectangle "==AppointmentRescheduled\n\nВремя: T+15s\nИсточник: Медицинский домен\n\nДанные:\n- appointmentId: uuid\n- newDateTime: timestamp\n- reason: string\n- patientNotified: boolean" as event_19 <<event>>
+
+rectangle "==MaintenanceCompleted\n\nВремя: T+2h\nИсточник: Оборудование домен\n\nДанные:\n- maintenanceId: uuid\n- completionDate: timestamp\n- results: object\n- nextMaintenanceDate: date" as event_20 <<event>>
+
+rectangle "==DrugSold\n\nВремя: T+0\nИсточник: Фармацевтический домен\n\nДанные:\n- saleId: uuid\n- prescriptionId: uuid\n- drugId: uuid\n- quantity: integer\n- price: decimal\n- pharmacyId: uuid" as event_21 <<event>>
+
+rectangle "==PaymentProcessed\n\nВремя: T+5s\nИсточник: Финтех домен\n\nДанные:\n- paymentId: uuid\n- saleId: uuid\n- amount: decimal\n- paymentMethod: enum\n- transactionId: string" as event_22 <<event>>
+
+rectangle "==StockLow\n\nВремя: T+10s\nИсточник: Фармацевтический домен\n\nДанные:\n- alertId: uuid\n- drugId: uuid\n- pharmacyId: uuid\n- currentStock: integer\n- minimumStock: integer\n- urgency: enum" as event_23 <<event>>
+
+rectangle "==ProcurementOrdered\n\nВремя: T+15s\nИсточник: Фармацевтический домен\n\nДанные:\n- orderId: uuid\n- drugId: uuid\n- quantity: integer\n- supplierId: uuid\n- expectedDelivery: date" as event_24 <<event>>
+
+' Kafka Event Bus
+rectangle "==Apache Kafka\n\nEvent Bus\n\nТопики:\n- medical.events\n- fintech.events\n- ai.events\n- pharma.events\n- equipment.events\n- data.events" as kafka_center <<kafka>>
+
+' Связи между событиями в потоках
+flow_patient_registration -down-> event_1 : Начинается с
+event_1 -down-> event_2 : Триггерит
+event_2 -down-> event_3 : Триггерит
+event_3 -down-> event_4 : Триггерит
+
+flow_treatment -down-> event_5 : Начинается с
+event_5 -down-> event_6 : Триггерит
+event_6 -down-> event_7 : Триггерит
+event_7 -down-> event_8 : Триггерит
+event_8 -down-> event_9 : Триггерит
+event_9 -down-> event_10 : Триггерит
+
+flow_ai_diagnosis -down-> event_11 : Начинается с
+event_11 -down-> event_12 : Триггерит
+event_12 -down-> event_13 : Триггерит
+event_13 -down-> event_14 : Триггерит
+event_14 -down-> event_15 : Триггерит
+
+flow_equipment_maintenance -down-> event_16 : Начинается с
+event_16 -down-> event_17 : Триггерит
+event_17 -down-> event_18 : Триггерит
+event_18 -down-> event_19 : Триггерит
+event_19 -down-> event_20 : Триггерит
+
+flow_pharma_cycle -down-> event_21 : Начинается с
+event_21 -down-> event_22 : Триггерит
+event_22 -down-> event_23 : Триггерит
+event_23 -down-> event_24 : Триггерит
+
+' Все события публикуются в Kafka
+event_1 -right-> kafka_center : Публикует
+event_2 -right-> kafka_center : Публикует
+event_3 -right-> kafka_center : Публикует
+event_4 -right-> kafka_center : Публикует
+event_5 -right-> kafka_center : Публикует
+event_6 -right-> kafka_center : Публикует
+event_7 -right-> kafka_center : Публикует
+event_8 -right-> kafka_center : Публикует
+event_9 -right-> kafka_center : Публикует
+event_10 -right-> kafka_center : Публикует
+event_11 -right-> kafka_center : Публикует
+event_12 -right-> kafka_center : Публикует
+event_13 -right-> kafka_center : Публикует
+event_14 -right-> kafka_center : Публикует
+event_15 -right-> kafka_center : Публикует
+event_16 -right-> kafka_center : Публикует
+event_17 -right-> kafka_center : Публикует
+event_18 -right-> kafka_center : Публикует
+event_19 -right-> kafka_center : Публикует
+event_20 -right-> kafka_center : Публикует
+event_21 -right-> kafka_center : Публикует
+event_22 -right-> kafka_center : Публикует
+event_23 -right-> kafka_center : Публикует
+event_24 -right-> kafka_center : Публикует
+
+note right of flow_patient_registration
+  Поток регистрации пациента:
+  
+  Временная последовательность:
+  T+0: PatientRegistered
+  T+5s: AccountCreated (автоматически)
+  T+10s: DataProductUpdated (аналитика)
+  T+15s: ModelTrainingTriggered (AI)
+  
+  Бизнес-правила:
+  - Счёт создаётся автоматически
+  - Данные обновляются в реальном времени
+  - AI модели переобучаются асинхронно
+  
+  SLA:
+  - Время обработки: < 20 секунд
+  - Доступность: 99.9%
+  - Throughput: 100 регистраций/мин
+end note
+
+note right of flow_treatment
+  Поток лечебного процесса:
+  
+  Временная последовательность:
+  T+0: TreatmentStarted
+  T+30s: PrescriptionCreated
+  T+35s: InventoryChecked
+  T+40s: EquipmentReserved
+  T+45s: PaymentRequired
+  T+2h: TreatmentCompleted
+  
+  Бизнес-правила:
+  - Рецепт создаётся врачом
+  - Проверка наличия лекарств обязательна
+  - Оборудование резервируется автоматически
+  - Платёж требуется до завершения лечения
+  
+  SLA:
+  - Время обработки: < 1 минуты
+  - Доступность: 99.9%
+  - Throughput: 50 процедур/час
+end note
+
+note right of flow_ai_diagnosis
+  Поток AI диагностики:
+  
+  Временная последовательность:
+  T+0: DiagnosisRequested
+  T+5s: ModelPrediction
+  T+10s: DiagnosisCompleted
+  T+15s: RecommendationProvided
+  T+20s: TreatmentPlanUpdated
+  
+  Бизнес-правила:
+  - AI анализ выполняется автоматически
+  - Уверенность > 80% для применения
+  - Рекомендации требуют одобрения врача
+  - План лечения обновляется с учётом AI
+  
+  SLA:
+  - Время обработки: < 30 секунд
+  - Доступность: 99.5%
+  - Throughput: 200 диагнозов/час
+  - Точность: > 85%
+end note
+
+note right of kafka_center
+  Apache Kafka Event Bus:
+  
+  Конфигурация:
+  - Brokers: 3
+  - Replication Factor: 3
+  - Partitions: 12-16 на топик
+  - Retention: 7 дней
+  - Compression: LZ4
+  
+  Топики:
+  - medical.events (12 партиций)
+  - fintech.events (8 партиций)
+  - ai.events (6 партиций)
+  - pharma.events (4 партиции)
+  - equipment.events (10 партиций)
+  - data.events (16 партиций)
+  
+  Мониторинг:
+  - Consumer Lag
+  - Throughput (events/sec)
+  - Error Rate
+  - Schema Evolution
+  
+  Безопасность:
+  - SASL/SCRAM аутентификация
+  - TLS шифрование
+  - ACL для доступа к топикам
+end note
+
+@enduml

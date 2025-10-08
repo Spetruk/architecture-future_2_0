@@ -1,0 +1,180 @@
+@startuml C4_Component_Pharma_Simple
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/database.puml
+
+skinparam rectangle {
+    BackgroundColor<<person>> LightBlue
+    BackgroundColor<<component>> LightSkyBlue
+    BackgroundColor<<database>> LightYellow
+    BackgroundColor<<external>> LightGray
+}
+
+title Компонентная диаграмма: Фармацевтический домен
+
+rectangle "==Фармацевт\nУправление аптекой" as pharmacist <<person>>
+rectangle "==Пациент\nПокупка лекарств" as patient <<person>>
+rectangle "==Закупщик\nЗаказ лекарств\nу поставщиков" as purchaser <<person>>
+
+rectangle "==Kafka Event Bus\nСобытийная шина" as event_bus <<external>>
+rectangle "==Data Lakehouse\nХранилище данных" as data_lakehouse <<external>>
+rectangle "==Medical Domain\nРецепты и назначения" as medical_domain <<external>>
+rectangle "==Suppliers\nПоставщики лекарств" as suppliers <<external>>
+
+package "Фармацевтический домен" {
+    
+    rectangle "==API Gateway\nKong/APISIX\n\nЕдиная точка входа" as api_gateway <<component>>
+    
+    package "Основные сервисы" {
+        rectangle "==Drug Catalog Service\nJava/Spring Boot\n\nКаталог лекарственных\nпрепаратов" as drug_catalog <<component>>
+        
+        rectangle "==Inventory Service\nGolang\n\nУправление запасами\nв аптеках" as inventory_service <<component>>
+        
+        rectangle "==Prescription Service\nJava/Spring Boot\n\nОбработка рецептов" as prescription_service <<component>>
+        
+        rectangle "==Sales Service\nGolang\n\nПродажи лекарств" as sales_service <<component>>
+        
+        rectangle "==Procurement Service\nJava/Spring Boot\n\nЗакупки у поставщиков" as procurement_service <<component>>
+    }
+    
+    package "Аналитика и рекомендации" {
+        rectangle "==Demand Forecasting\nPython/ML\n\nПрогнозирование спроса\nна лекарства" as demand_forecasting <<component>>
+        
+        rectangle "==Drug Interaction Checker\nPython\n\nПроверка совместимости\nлекарств" as interaction_checker <<component>>
+        
+        rectangle "==Substitute Recommender\nPython/ML\n\nПодбор аналогов\nлекарств" as substitute_recommender <<component>>
+    }
+    
+    package "Интеграции" {
+        rectangle "==Supplier Integration\nJava\n\nИнтеграция с поставщиками" as supplier_integration <<component>>
+        
+        rectangle "==Regulatory Reporting\nJava\n\nОтчётность в\nРосздравнадзор" as regulatory_reporting <<component>>
+        
+        rectangle "==Price Monitor\nPython\n\nМониторинг цен\nконкурентов" as price_monitor <<component>>
+    }
+    
+    package "Публикация событий" {
+        rectangle "==Outbox Processor\nDebezium/CDC\n\nГарантированная доставка" as outbox_processor <<component>>
+        
+        rectangle "==Event Publisher\nGolang\n\nПубликация в Kafka" as event_publisher <<component>>
+    }
+    
+    package "Продукты данных" {
+        rectangle "==Pharma Sales DP\nPython/dbt\n\nАналитика продаж" as pharma_sales_dp <<component>>
+        
+        rectangle "==Inventory Optimization DP\nPython/dbt\n\nОптимизация запасов" as inventory_opt_dp <<component>>
+        
+        rectangle "==Drug Trends DP\nPython/dbt\n\nТренды назначений" as drug_trends_dp <<component>>
+    }
+    
+    rectangle "==Operational DB\n<$database>\nPostgreSQL\n\nОперационные данные\nфарм. бизнеса" as operational_db <<database>>
+    
+    rectangle "==Event Consumer\nGolang\n\nПодписка на события\nмедицинского домена" as event_consumer <<component>>
+    
+    rectangle "==Inventory Cache\nRedis\n\nКэш остатков по аптекам" as inventory_cache <<component>>
+}
+
+pharmacist -down-> api_gateway : Управление аптекой\n(HTTPS)
+patient -down-> api_gateway : Покупка лекарств\n(Mobile App)
+purchaser -down-> api_gateway : Заказ у поставщиков\n(HTTPS)
+
+api_gateway -down-> drug_catalog : Маршрутизирует запросы
+api_gateway -down-> inventory_service : Маршрутизирует запросы
+api_gateway -down-> prescription_service : Маршрутизирует запросы
+api_gateway -down-> sales_service : Маршрутизирует запросы
+api_gateway -down-> procurement_service : Маршрутизирует запросы
+
+drug_catalog -down-> operational_db : CRUD операции\n(SQL)
+inventory_service -down-> operational_db : Управление запасами\n(SQL)
+prescription_service -down-> operational_db : Сохранение рецептов\n(SQL)
+sales_service -down-> operational_db : Транзакции продаж\n(SQL)
+procurement_service -down-> operational_db : Заказы поставщикам\n(SQL)
+
+inventory_service -right-> inventory_cache : Кэш остатков
+sales_service -right-> inventory_cache : Обновление остатков
+
+prescription_service -down-> interaction_checker : Проверка совместимости\nлекарств
+drug_catalog -down-> substitute_recommender : Поиск аналогов
+inventory_service -down-> demand_forecasting : Прогноз потребности
+
+procurement_service -right-> supplier_integration : Отправка заказов
+supplier_integration -right-> suppliers : EDI/REST API
+
+operational_db -down-> outbox_processor : Change Data Capture\n(CDC)
+outbox_processor -right-> event_publisher : События из Outbox
+event_publisher -right-> event_bus : Публикует события:\nDrugSold,\nPrescriptionFilled,\nInventoryLow,\nProcurementOrdered
+
+event_bus -down-> event_consumer : Подписан на события:\nPrescriptionCreated,\nTreatmentPrescribed
+event_consumer -up-> prescription_service : Обработка рецептов\nот врачей
+
+regulatory_reporting -up-> operational_db : Выборка данных
+regulatory_reporting -right-> event_bus : Отчёты в Росздравнадзор
+
+price_monitor -right-> drug_catalog : Обновление цен
+
+event_bus -down-> data_lakehouse : Поток событий\n(Stream)
+pharma_sales_dp -down-> data_lakehouse : Читает данные\n(SQL)
+inventory_opt_dp -down-> data_lakehouse : Читает данные\n(SQL)
+drug_trends_dp -down-> data_lakehouse : Читает данные\n(SQL)
+
+event_bus -right-> medical_domain : События о продажах\nлекарств
+
+note right of demand_forecasting
+  ML-модель прогнозирования:
+  
+  Учитывает:
+  - Исторические продажи
+  - Сезонность
+  - Эпидемиологическую
+    обстановку
+  - Тренды назначений врачей
+  
+  Помогает оптимизировать
+  закупки и избежать дефицита
+end note
+
+note right of interaction_checker
+  Проверка лекарственных
+  взаимодействий:
+  
+  - Drug-Drug interactions
+  - Drug-Food interactions
+  - Contraindications
+  
+  Алерты фармацевту при
+  выявлении конфликтов
+  
+  Критично для безопасности
+  пациентов
+end note
+
+note right of inventory_service
+  Управление запасами:
+  
+  - Multi-location inventory
+  - Expiry date tracking
+  - Automatic reordering
+  - Transfer between pharmacies
+  
+  Integration with sales для
+  real-time обновления остатков
+end note
+
+note right of pharma_sales_dp
+  Data Product
+  Владелец: Pharma Domain Team
+  
+  Consumers:
+  - BI Portal
+  - Finance reporting
+  - Marketing analytics
+  
+  SLA: Daily refresh
+  
+  Метрики:
+  - Revenue by drug
+  - Top selling medications
+  - Margin analysis
+end note
+
+@enduml

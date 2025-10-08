@@ -1,0 +1,145 @@
+@startuml C4_Component_Fintech_Simple
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/database.puml
+
+skinparam rectangle {
+    BackgroundColor<<person>> LightBlue
+    BackgroundColor<<component>> LightSkyBlue
+    BackgroundColor<<database>> LightYellow
+    BackgroundColor<<external>> LightGray
+}
+
+title Компонентная диаграмма: Финтех домен
+
+rectangle "==Клиент\nПользователь банковских\nуслуг" as customer <<person>>
+rectangle "==Оператор\nОбслуживание клиентов" as operator <<person>>
+
+rectangle "==Kafka Event Bus\nСобытийная шина" as event_bus <<external>>
+rectangle "==Data Lakehouse\nХранилище данных" as data_lakehouse <<external>>
+rectangle "==Payment Systems\nВнешние платёжные\nсистемы" as payment_systems <<external>>
+rectangle "==CB RF\nЦентральный Банк РФ" as central_bank <<external>>
+
+package "Финтех домен" {
+    
+    rectangle "==API Gateway\nKong/APISIX\n\nЕдиная точка входа +\nRate Limiting" as api_gateway <<component>>
+    
+    package "Основные сервисы" {
+        rectangle "==Account Service\nGolang\n\nУправление счетами" as account_service <<component>>
+        
+        rectangle "==Payment Service\nGolang\n\nПроведение платежей" as payment_service <<component>>
+        
+        rectangle "==Credit Service\nJava/Spring Boot\n\nКредитные продукты" as credit_service <<component>>
+        
+        rectangle "==Card Service\nGolang\n\nУправление картами" as card_service <<component>>
+        
+        rectangle "==KYC Service\nJava/Spring Boot\n\nВерификация клиентов\nи AML" as kyc_service <<component>>
+    }
+    
+    package "Аналитика рисков" {
+        rectangle "==Fraud Detection\nPython/ML\n\nОбнаружение мошенничества" as fraud_detection <<component>>
+        
+        rectangle "==Credit Scoring\nPython/ML\n\nСкоринг заёмщиков" as credit_scoring <<component>>
+    }
+    
+    package "Интеграции" {
+        rectangle "==Payment Gateway\nGolang\n\nИнтеграция с платёжными\nсистемами" as payment_gateway <<component>>
+        
+        rectangle "==Regulatory Reporting\nJava\n\nОтчётность в ЦБ" as regulatory_reporting <<component>>
+    }
+    
+    package "Публикация событий" {
+        rectangle "==Outbox Processor\nDebezium/CDC\n\nГарантированная доставка" as outbox_processor <<component>>
+        
+        rectangle "==Event Publisher\nGolang\n\nПубликация в Kafka" as event_publisher <<component>>
+    }
+    
+    package "Продукты данных" {
+        rectangle "==Financial Analytics DP\nPython/dbt\n\nФинансовая аналитика" as financial_dp <<component>>
+        
+        rectangle "==Customer Behavior DP\nPython/dbt\n\nПоведение клиентов" as customer_behavior_dp <<component>>
+        
+        rectangle "==Risk Metrics DP\nPython/dbt\n\nМетрики рисков" as risk_metrics_dp <<component>>
+    }
+    
+    rectangle "==Operational DB\n<$database>\nPostgreSQL (Sharded)\n\nОперационные данные\nфинансовых транзакций" as operational_db <<database>>
+    
+    rectangle "==Event Consumer\nGolang\n\nПодписка на события\nмедицинского домена" as event_consumer <<component>>
+    
+    rectangle "==Transaction Cache\nRedis Cluster\n\nКэш активных транзакций" as transaction_cache <<component>>
+}
+
+rectangle "==Medical Domain\nСобытия о пациентах\nи счетах" as medical_domain <<external>>
+
+customer -down-> api_gateway : Мобильное приложение/\nWeb\n(HTTPS)
+operator -down-> api_gateway : Административная\nпанель\n(HTTPS)
+
+api_gateway -down-> account_service : Маршрутизирует запросы
+api_gateway -down-> payment_service : Маршрутизирует запросы
+api_gateway -down-> credit_service : Маршрутизирует запросы
+api_gateway -down-> card_service : Маршрутизирует запросы
+api_gateway -down-> kyc_service : Маршрутизирует запросы
+
+account_service -down-> operational_db : CRUD операции\n(SQL)
+payment_service -down-> operational_db : Транзакции\n(SQL + ACID)
+credit_service -down-> operational_db : CRUD операции\n(SQL)
+card_service -down-> operational_db : CRUD операции\n(SQL)
+kyc_service -down-> operational_db : Верификация данных\n(SQL)
+
+payment_service -right-> transaction_cache : Проверка дубликатов\nи статусов
+payment_service -right-> payment_gateway : Проведение платежа
+payment_gateway -right-> payment_systems : Интеграция\n(REST/SOAP)
+
+payment_service -down-> fraud_detection : Проверка транзакции\n(Async)
+credit_service -down-> credit_scoring : Оценка заёмщика\n(Sync)
+
+operational_db -down-> outbox_processor : Change Data Capture\n(CDC)
+outbox_processor -right-> event_publisher : События из Outbox
+event_publisher -right-> event_bus : Публикует события:\nPaymentProcessed,\nCreditApproved,\nAccountCreated
+
+event_bus -down-> event_consumer : Подписан на события:\nTreatmentCompleted,\nInvoiceCreated
+event_consumer -up-> payment_service : Автоплатежи за\nмедуслуги
+
+regulatory_reporting -up-> operational_db : Выборка данных для\nотчётности
+regulatory_reporting -right-> central_bank : Отправка отчётов\n(SFTP/API)
+
+event_bus -down-> data_lakehouse : Поток событий\n(Stream)
+financial_dp -down-> data_lakehouse : Читает данные\n(SQL)
+customer_behavior_dp -down-> data_lakehouse : Читает данные\n(SQL)
+risk_metrics_dp -down-> data_lakehouse : Читает данные\n(SQL)
+
+event_bus -right-> medical_domain : События о платежах
+
+note right of fraud_detection
+  ML-модель для real-time
+  обнаружения мошенничества:
+  - Анализ паттернов транзакций
+  - Геолокация
+  - Device fingerprinting
+  - Поведенческая биометрия
+  
+  Latency SLA: < 100ms
+end note
+
+note right of payment_service
+  Двухфазный коммит (2PC)
+  для распределённых транзакций
+  
+  Saga Pattern для
+  long-running transactions
+  
+  Idempotency ключи для
+  защиты от дубликатов
+end note
+
+note right of financial_dp
+  Data Product
+  Владелец: Fintech Domain Team
+  Consumers: 
+  - BI Portal
+  - Risk Management
+  - Regulatory Reports
+  SLA: Near real-time (15 min)
+end note
+
+@enduml

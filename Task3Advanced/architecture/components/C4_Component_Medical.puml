@@ -1,0 +1,95 @@
+@startuml C4_Component_Medical_Simple
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/database.puml
+
+skinparam rectangle {
+    BackgroundColor<<person>> LightBlue
+    BackgroundColor<<component>> LightSkyBlue
+    BackgroundColor<<database>> LightYellow
+    BackgroundColor<<external>> LightGray
+}
+
+title Компонентная диаграмма: Медицинский домен
+
+rectangle "==Оператор клиники" as operator <<person>>
+rectangle "==Врач" as doctor <<person>>
+
+rectangle "==Kafka Event Bus\nСобытийная шина" as event_bus <<external>>
+rectangle "==Data Lakehouse\nХранилище данных" as data_lakehouse <<external>>
+
+package "Медицинский домен" {
+    
+    rectangle "==API Gateway\nKong/APISIX\n\nЕдиная точка входа" as api_gateway <<component>>
+    
+    package "Операционные сервисы" {
+        rectangle "==Patient Service\nJava/Spring Boot\n\nУправление пациентами" as patient_service <<component>>
+        
+        rectangle "==Appointment Service\nJava/Spring Boot\n\nЗапись на приём" as appointment_service <<component>>
+        
+        rectangle "==Treatment Service\nJava/Spring Boot\n\nЛечебный процесс" as treatment_service <<component>>
+        
+        rectangle "==EMR Service\nJava/Spring Boot\n\nЭлектронные медкарты" as emr_service <<component>>
+    }
+    
+    package "Публикация событий" {
+        rectangle "==Outbox Processor\nDebezium/CDC\n\nГарантированная доставка\nсобытий" as outbox_processor <<component>>
+        
+        rectangle "==Event Publisher\nSpring Cloud Stream\n\nПубликация в Kafka" as event_publisher <<component>>
+    }
+    
+    package "Продукты данных" {
+        rectangle "==Patient Analytics DP\nPython/dbt\n\nАналитика пациентов" as patient_dp <<component>>
+        
+        rectangle "==Clinic Performance DP\nPython/dbt\n\nЭффективность клиник" as clinic_performance_dp <<component>>
+    }
+    
+    rectangle "==Operational DB\n<$database>\nPostgreSQL\n\nОперационные данные\nдомена" as operational_db <<database>>
+    
+    rectangle "==Event Consumer\nSpring Cloud Stream\n\nПодписка на события\nдругих доменов" as event_consumer <<component>>
+}
+
+rectangle "==AI Domain\nПолучает медицинские\nсобытия" as ai_domain <<external>>
+rectangle "==Fintech Domain\nПолучает события\nо счетах" as fintech_domain <<external>>
+
+operator -down-> api_gateway : Работает с системой\n(HTTPS)
+doctor -down-> api_gateway : Доступ к EMR\n(HTTPS)
+
+api_gateway -down-> patient_service : Маршрутизирует\nзапросы
+api_gateway -down-> appointment_service : Маршрутизирует\nзапросы
+api_gateway -down-> treatment_service : Маршрутизирует\nзапросы
+api_gateway -down-> emr_service : Маршрутизирует\nзапросы
+
+patient_service -down-> operational_db : CRUD операции\n(SQL)
+appointment_service -down-> operational_db : CRUD операции\n(SQL)
+treatment_service -down-> operational_db : CRUD операции\n(SQL)
+emr_service -down-> operational_db : CRUD операции\n(SQL)
+
+operational_db -down-> outbox_processor : Change Data Capture\n(CDC)
+outbox_processor -right-> event_publisher : События из Outbox
+event_publisher -right-> event_bus : Публикует события\nPatientCreated,\nAppointmentScheduled
+
+event_bus -down-> event_consumer : Подписан на события\nPaymentReceived
+event_consumer -up-> treatment_service : Обновляет статус
+
+event_bus -right-> ai_domain : Медицинские события\nдля AI
+event_bus -right-> fintech_domain : События о счетах
+
+patient_dp -down-> data_lakehouse : Читает из Lakehouse\n(SQL)
+clinic_performance_dp -down-> data_lakehouse : Читает из Lakehouse\n(SQL)
+event_bus -down-> data_lakehouse : События поступают\n(Stream)
+
+note right of outbox_processor
+  Transactional Outbox Pattern
+  Гарантирует exactly-once 
+  семантику публикации событий
+end note
+
+note right of patient_dp
+  Data Product
+  Владелец: Medical Domain Team
+  Consumers: BI Portal, Reports
+  SLA: Daily refresh
+end note
+
+@enduml

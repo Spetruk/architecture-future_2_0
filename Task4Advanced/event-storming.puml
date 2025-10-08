@@ -1,0 +1,212 @@
+@startuml Event_Storming_Architecture
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/user.puml
+!include ICONURL/font-awesome-5/server.puml
+
+skinparam rectangle {
+    BackgroundColor<<domain>> LightBlue
+    BackgroundColor<<event>> LightGreen
+    BackgroundColor<<command>> LightYellow
+    BackgroundColor<<aggregate>> LightCoral
+    BackgroundColor<<external>> LightGray
+    BackgroundColor<<kafka>> LightPink
+    BackgroundColor<<subscriber>> LightCyan
+}
+
+title Event Storming - Целевая событийная архитектура экосистемы "Будущее 2.0"
+
+' Домены как источники событий
+rectangle "==Медицинский домен\n\nИсточник событий:\n- PatientRegistered\n- AppointmentScheduled\n- TreatmentStarted\n- PrescriptionCreated\n- MedicalRecordUpdated" as medical_domain <<domain>>
+
+rectangle "==Финтех домен\n\nИсточник событий:\n- AccountCreated\n- PaymentProcessed\n- CreditApproved\n- TransactionCompleted\n- CardIssued" as fintech_domain <<domain>>
+
+rectangle "==AI-сервисы домен\n\nИсточник событий:\n- ModelTrained\n- PredictionGenerated\n- DiagnosisCompleted\n- RecommendationProvided\n- ModelDriftDetected" as ai_domain <<domain>>
+
+rectangle "==Фармацевтический домен\n\nИсточник событий:\n- DrugAdded\n- InventoryUpdated\n- PrescriptionFilled\n- SaleCompleted\n- StockLow" as pharma_domain <<domain>>
+
+rectangle "==Оборудование домен\n\nИсточник событий:\n- EquipmentRegistered\n- MaintenanceScheduled\n- AnomalyDetected\n- EquipmentFailure\n- TelemetryReceived" as equipment_domain <<domain>>
+
+rectangle "==Платформа данных\n\nИсточник событий:\n- DataProductCreated\n- EventPublished\n- SchemaUpdated\n- PipelineCompleted" as data_domain <<domain>>
+
+rectangle "==Портал самообслуживания\n\nИсточник событий:\n- DashboardCreated\n- ReportGenerated\n- QueryExecuted\n- UserAuthenticated" as portal_domain <<domain>>
+
+' Kafka Event Bus
+rectangle "==Apache Kafka\n\nEvent Bus\n\nТопики:\n- medical.events\n- fintech.events\n- ai.events\n- pharma.events\n- equipment.events\n- data.events\n- portal.events" as kafka_bus <<kafka>>
+
+' Ключевые события с детальным описанием
+rectangle "==PatientRegistered\n\nСобытие: Регистрация пациента\n\nИсточник: Медицинский домен\n\nПодписчики:\n- Финтех домен (создание счёта)\n- AI домен (подготовка данных)\n- Платформа данных (аналитика)\n\nПолезная нагрузка:\n- patientId, personalInfo,\n- contactInfo, registrationDate" as event_patient_registered <<event>>
+
+rectangle "==CreditApproved\n\nСобытие: Кредит одобрен\n\nИсточник: Финтех домен\n\nПодписчики:\n- Медицинский домен (уведомление)\n- Платформа данных (аналитика)\n\nПолезная нагрузка:\n- creditId, customerId, amount,\n- interestRate, term, conditions" as event_credit_approved <<event>>
+
+rectangle "==DiagnosisCompleted\n\nСобытие: AI диагноз завершён\n\nИсточник: AI домен\n\nПодписчики:\n- Медицинский домен (результаты)\n- Фармацевтический домен (рекомендации)\n- Платформа данных (метрики)\n\nПолезная нагрузка:\n- diagnosisId, patientId, condition,\n- confidence, evidence, recommendations" as event_diagnosis_completed <<event>>
+
+rectangle "==PrescriptionFilled\n\nСобытие: Рецепт выполнен\n\nИсточник: Фармацевтический домен\n\nПодписчики:\n- Медицинский домен (подтверждение)\n- Финтех домен (создание счёта)\n- Платформа данных (аналитика)\n\nПолезная нагрузка:\n- prescriptionId, patientId,\n- medications, totalAmount" as event_prescription_filled <<event>>
+
+rectangle "==AnomalyDetected\n\nСобытие: Обнаружена аномалия\n\nИсточник: Оборудование домен\n\nПодписчики:\n- Медицинский домен (уведомление)\n- Maintenance Service (ремонт)\n- Платформа данных (аналитика)\n\nПолезная нагрузка:\n- anomalyId, equipmentId,\n- anomalyType, severity, recommendation" as event_anomaly_detected <<event>>
+
+rectangle "==DataProductCreated\n\nСобытие: Продукт данных создан\n\nИсточник: Платформа данных\n\nПодписчики:\n- Портал самообслуживания (доступность)\n- Data Catalog (регистрация)\n\nПолезная нагрузка:\n- dataProductId, productName,\n- domain, owner, schema, sla" as event_data_product_created <<event>>
+
+rectangle "==ReportGenerated\n\nСобытие: Отчёт сгенерирован\n\nИсточник: Портал самообслуживания\n\nПодписчики:\n- Платформа данных (аналитика использования)\n\nПолезная нагрузка:\n- reportId, reportName, ownerId,\n- reportType, executionTime, fileSize" as event_report_generated <<event>>
+
+' Подписчики событий
+rectangle "==Подписчики медицинских событий\n\n- Финтех домен: PatientRegistered → AccountCreated\n- AI домен: TreatmentStarted → ModelTraining\n- Фармацевтический: PrescriptionCreated → InventoryCheck\n- Оборудование: AppointmentScheduled → EquipmentReservation" as medical_subscribers <<subscriber>>
+
+rectangle "==Подписчики финтех событий\n\n- Медицинский домен: PaymentProcessed → TreatmentConfirmed\n- Платформа данных: TransactionCompleted → Analytics\n- AI домен: CreditApproved → RiskModelUpdate" as fintech_subscribers <<subscriber>>
+
+rectangle "==Подписчики AI событий\n\n- Медицинский домен: DiagnosisCompleted → TreatmentPlan\n- Фармацевтический: RecommendationProvided → DrugSelection\n- Платформа данных: ModelTrained → ModelRegistry" as ai_subscribers <<subscriber>>
+
+rectangle "==Подписчики фармацевтических событий\n\n- Медицинский домен: PrescriptionFilled → TreatmentUpdate\n- Финтех домен: SaleCompleted → PaymentProcessing\n- Платформа данных: InventoryUpdated → SupplyChainAnalytics" as pharma_subscribers <<subscriber>>
+
+rectangle "==Подписчики событий оборудования\n\n- Медицинский домен: EquipmentAvailable → AppointmentScheduling\n- Maintenance Service: AnomalyDetected → RepairScheduling\n- Платформа данных: TelemetryReceived → PerformanceAnalytics" as equipment_subscribers <<subscriber>>
+
+rectangle "==Подписчики событий платформы данных\n\n- Портал самообслуживания: DataProductCreated → CatalogUpdate\n- Data Catalog: EventPublished → SchemaValidation\n- Все домены: PipelineCompleted → DataRefresh" as data_subscribers <<subscriber>>
+
+rectangle "==Подписчики событий портала\n\n- Платформа данных: ReportGenerated → UsageAnalytics\n- Security Service: UserAuthenticated → AccessLog\n- Notification Service: DashboardCreated → UserNotification" as portal_subscribers <<subscriber>>
+
+' Связи между доменами и событиями
+medical_domain -down-> event_patient_registered : Публикует
+fintech_domain -down-> event_credit_approved : Публикует
+ai_domain -down-> event_diagnosis_completed : Публикует
+pharma_domain -down-> event_prescription_filled : Публикует
+equipment_domain -down-> event_anomaly_detected : Публикует
+data_domain -down-> event_data_product_created : Публикует
+portal_domain -down-> event_report_generated : Публикует
+
+' События публикуются в Kafka
+event_patient_registered -down-> kafka_bus : Публикует в топик
+event_credit_approved -down-> kafka_bus : Публикует в топик
+event_diagnosis_completed -down-> kafka_bus : Публикует в топик
+event_prescription_filled -down-> kafka_bus : Публикует в топик
+event_anomaly_detected -down-> kafka_bus : Публикуется в топик
+event_data_product_created -down-> kafka_bus : Публикует в топик
+event_report_generated -down-> kafka_bus : Публикует в топик
+
+' Подписчики получают события из Kafka
+kafka_bus -down-> medical_subscribers : Подписывается на события
+kafka_bus -down-> fintech_subscribers : Подписывается на события
+kafka_bus -down-> ai_subscribers : Подписывается на события
+kafka_bus -down-> pharma_subscribers : Подписывается на события
+kafka_bus -down-> equipment_subscribers : Подписывается на события
+kafka_bus -down-> data_subscribers : Подписывается на события
+kafka_bus -down-> portal_subscribers : Подписывается на события
+
+' Детальные потоки событий
+note right of event_patient_registered
+  Поток PatientRegistered:
+  
+  1. Медицинский домен публикует событие
+  2. Финтех домен создаёт счёт для пациента
+  3. AI домен подготавливает данные для обучения
+  4. Платформа данных обновляет аналитику
+  
+  Схема события:
+  {
+    "eventId": "uuid",
+    "eventType": "PatientRegistered",
+    "aggregateId": "patient-uuid",
+    "aggregateType": "Patient",
+    "timestamp": "2024-01-01T10:00:00Z",
+    "version": 1,
+    "data": {
+      "patientId": "uuid",
+      "personalInfo": {...},
+      "contactInfo": {...},
+      "registrationDate": "2024-01-01T10:00:00Z"
+    }
+  }
+end note
+
+note right of event_credit_approved
+  Поток CreditApproved:
+  
+  1. Финтех домен одобряет кредит
+  2. Медицинский домен уведомляется о доступности
+  3. Платформа данных обновляет кредитную аналитику
+  
+  Бизнес-правила:
+  - Кредит должен быть связан с пациентом
+  - Уведомление отправляется в течение 5 минут
+  - Аналитика обновляется в реальном времени
+end note
+
+note right of event_diagnosis_completed
+  Поток DiagnosisCompleted:
+  
+  1. AI домен завершает анализ
+  2. Медицинский домен получает результаты
+  3. Фармацевтический домен получает рекомендации
+  4. Платформа данных регистрирует метрики
+  
+  Требования:
+  - Уверенность > 80% для автоматического применения
+  - Объяснение диагноза обязательно
+  - Аудит всех AI решений
+end note
+
+note right of kafka_bus
+  Apache Kafka Event Bus:
+  
+  Топики по доменам:
+  - medical.events (партиции: 12)
+  - fintech.events (партиции: 8)
+  - ai.events (партиции: 6)
+  - pharma.events (партиции: 4)
+  - equipment.events (партиции: 10)
+  - data.events (партиции: 16)
+  - portal.events (партиции: 4)
+  
+  Настройки:
+  - Replication Factor: 3
+  - Retention: 7 дней
+  - Compression: LZ4
+  - Schema Registry: Confluent
+  
+  Мониторинг:
+  - Lag monitoring
+  - Throughput metrics
+  - Error rates
+  - Schema evolution
+end note
+
+note bottom of medical_subscribers
+  Подписчики медицинских событий:
+  
+  Финтех домен:
+  - PatientRegistered → CreateAccount
+  - TreatmentCompleted → CreateInvoice
+  - PaymentRequired → ProcessPayment
+  
+  AI домен:
+  - TreatmentStarted → PrepareAnalysis
+  - MedicalRecordUpdated → RetrainModels
+  - DiagnosisRequested → GeneratePrediction
+  
+  Фармацевтический домен:
+  - PrescriptionCreated → CheckInventory
+  - TreatmentPrescribed → UpdateDemandForecast
+  
+  Оборудование домен:
+  - AppointmentScheduled → ReserveEquipment
+  - TreatmentStarted → TrackUsage
+end note
+
+note bottom of fintech_subscribers
+  Подписчики финтех событий:
+  
+  Медицинский домен:
+  - PaymentProcessed → ConfirmTreatment
+  - CreditApproved → NotifyPatient
+  - AccountCreated → LinkToPatient
+  
+  Платформа данных:
+  - TransactionCompleted → UpdateAnalytics
+  - PaymentProcessed → UpdateRevenueMetrics
+  - CreditApproved → UpdateCreditMetrics
+  
+  AI домен:
+  - CreditApproved → UpdateRiskModels
+  - PaymentProcessed → FraudDetection
+end note
+
+@enduml
